@@ -235,7 +235,7 @@ sub translation {
         $answerResponse->{correct} = $answers->{"$key"}->{"correct_ans"};
         $answerResponse->{score} = $answers->{"$key"}->{"score"};
         $answerResponse->{evaluated} = $answers->{"$key"}->{"student_ans"};
-        $answerResponse->{preview} = $preview;
+        $answerResponse->{preview} = encode_base64($preview);
         push(@answersArray, $answerResponse);
     }
 
