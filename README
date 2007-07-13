@@ -1,0 +1,23 @@
+Webwork Problem Server
+-----------------------------------
+
+1) Setup
+    a) Make the temp directories....
+        cd htdocs
+        mkdir tmp
+        cd tmp
+        mkdir equations
+        cd ../../
+        sudo chmod -R 777 tmp
+
+2) Configuration
+    The main changes in configuration are in the top of global.conf and in problemserver.apache2-config
+    In problemserver.apache2-config:
+        $problemserver_dir  = The root directory where the problemserver is installed.
+        $pg_dir             = The root directory where the pg is installed.
+        The Alias command should be changed to point to the root directory of problemserver + "/htdocs"
+            ex) Alias /problemserver_files /home/you/problemserver/htdocs
+        The Directory line should be changed to be the same as the second part of the Alias command above
+            ex) <Directory /home/you/problemserver/htdocs>
+    In global.conf
+        ...
