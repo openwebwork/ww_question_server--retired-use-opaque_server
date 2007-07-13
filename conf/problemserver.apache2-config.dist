@@ -1,7 +1,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/problemserver.apache2-config,v 1.1.1.1 2007/07/11 19:06:48 gage Exp $
+# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.1 2007/07/13 20:26:59 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -15,10 +15,10 @@
 ################################################################################
 
 <Perl>
-my $problemserver_dir = "/home/your/problemserver/directory";
+my $problemserver_dir = "/your/problemserver/directory";
 $ENV{PROBLEMSERVER_ROOT} = $problemserver_dir;
 
-my $pg_dir = "/home/your/pg/directory";
+my $pg_dir = "/your/pg/directory";
 
 eval "use lib '$problemserver_dir/lib'"; die $@ if $@;
 eval "use ProblemServer::Environment"; die $@ if $@;
@@ -31,8 +31,8 @@ eval "use lib '$pg_dir/lib'"; die $@ if $@;
 
 PerlModule ProblemServer
 
-Alias /problemserver_files /home/your/problemserver/directory/htdocs
-<Directory /home/your/problemserver/directory/htdocs>
+Alias /problemserver_files /your/problemserver/directory/htdocs
+<Directory /your/problemserver/directory/htdocs>
     Allow from all
     AllowOverride None
     Options FollowSymLinks

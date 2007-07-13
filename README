@@ -20,7 +20,7 @@ Webwork Problem Server
         $problemServer{host}	= The host the problem server is installed on
             ex) "http://www.example.org";
         $pg_dir              	= Same as the $pg_dir for problemserver.apache2-config
-
+	$problemServerDirs{root}= Same as the $problemserver_dir for problemserver.apache2-config
         Optionally: On line 163 you can add more paths to look for macro files.
 
     Finally you need to add an Include statement to your apache2.conf file. This should be located in /etc/apache2/apache2.conf under most systems.
