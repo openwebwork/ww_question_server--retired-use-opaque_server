@@ -1,0 +1,59 @@
+################################################################################
+# WeBWorK Online Homework Delivery System
+# Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
+# $CVSHeader: ww_question_server/conf/problemserver.apache2-config,v 1.1.1.1 2007/07/11 19:06:48 gage Exp $
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of either: (a) the GNU General Public License as published by the
+# Free Software Foundation; either version 2, or (at your option) any later
+# version, or (b) the "Artistic License" which comes with this package.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See either the GNU General Public License or the
+# Artistic License for more details.
+################################################################################
+
+<Perl>
+my $problemserver_dir = "/home/your/problemserver/directory";
+$ENV{PROBLEMSERVER_ROOT} = $problemserver_dir;
+
+my $pg_dir = "/home/your/pg/directory";
+
+eval "use lib '$problemserver_dir/lib'"; die $@ if $@;
+eval "use ProblemServer::Environment"; die $@ if $@;
+
+my $environ = new ProblemServer::Environment($problemserver_dir);
+
+eval "use lib '$pg_dir/lib'"; die $@ if $@;
+
+</Perl>
+
+PerlModule ProblemServer
+
+Alias /problemserver_files /home/your/problemserver/directory/htdocs
+<Directory /home/your/problemserver/directory/htdocs>
+    Allow from all
+    AllowOverride None
+    Options FollowSymLinks
+    Order allow,deny
+</Directory>
+
+#PROBLEMSERVER SOAP CONFIGURATION
+<Location /problemserver_rpc>
+	PerlHandler Apache::SOAP
+	SetHandler perl-script
+	PerlSetVar dispatch_to "ProblemServer"
+	PerlSetVar options "compress_threshold => 10000"
+	Order Allow,Deny
+	Allow from All
+</Location>
+#PROBLEMSERVER SOAP WSDL HANDLER :: TO BE REPLACED WITH A FILE FOR PRODUCTION SERVERS
+<Location /problemserver_wsdl>
+	PerlSetVar dispatch_to "ProblemServer::WSDL"
+	PerlSetVar options "compress_threshold => 10000"
+	PerlHandler ProblemServer::WSDL
+	SetHandler perl-script
+	Order Allow,Deny
+	Allow from All
+</Location>
