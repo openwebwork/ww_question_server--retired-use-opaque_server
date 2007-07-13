@@ -2,13 +2,10 @@ Webwork Problem Server
 -----------------------------------
 
 1) Setup
-    a) Make the temp directories....
-        cd htdocs
-        mkdir tmp
-        cd tmp
-        mkdir equations
-        cd ../../
-        sudo chmod -R 777 tmp
+    a) Change permissions for directories writable by server
+        chmod -R 777 htdocs/tmp
+        chmod -R 777 tmp
+
 
 2) Configuration
     The main changes in configuration are in the top of global.conf and in problemserver.apache2-config
