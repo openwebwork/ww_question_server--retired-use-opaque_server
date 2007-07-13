@@ -435,6 +435,7 @@ sub checker{
     $self->{problemEnviron}{displayMode} 	= translateDisplayModeNames("images");
     $self->{problemEnviron}{languageMode}       = $self->{problemEnviron}{displayMode};
     $self->{problemEnviron}{outputMode}		= $self->{problemEnviron}{displayMode};
+    $self->{problemEnviron}{problemSeed} 	= $seed;
 
     #PREP IMAGE GENERATOR
     my $image_generator;
