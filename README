@@ -20,4 +20,13 @@ Webwork Problem Server
         The Directory line should be changed to be the same as the second part of the Alias command above
             ex) <Directory /home/you/problemserver/htdocs>
     In global.conf
-        ...
+        $problemServer{host}	= The host the problem server is installed on
+            ex) "http://www.example.org";
+        $pg_dir              	= Same as the $pg_dir for problemserver.apache2-config
+
+        Optionally: On line 163 you can add more paths to look for macro files.
+
+    Finally you need to add an Include statement to your apache2.conf file. This should be located in /etc/apache2/apache2.conf under most systems.
+        ex) Include /home/you/problemserver/conf/problemserver.apache2-config
+
+3) Restart Apache2
