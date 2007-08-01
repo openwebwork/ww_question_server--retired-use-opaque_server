@@ -1,8 +1,8 @@
 #!perl
 ################################################################################
 # WeBWorK Online Homework Delivery System
-# Copyright Â© 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/global.conf.dist,v 1.4 2007/07/13 21:05:11 mleventi Exp $
+# Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
+# $CVSHeader: ww_question_server/conf/global.conf,v 1.3 2007/07/13 20:13:19 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -19,23 +19,17 @@
 # ProblemServer options
 ################################################################################
 
-$problemServer{host}	= "http://www.example.org";
-
-$problemServer{wsdl} 	= "$problemServer{host}/problemserver_wsdl";
-
-$problemServer{rpc} 	= "$problemServer{host}/problemserver_rpc";
-
-$pg_dir              	= "/your/pg/directory";
-
+#DO NOT REMOVE THIS
+MARKER_FOR_APACHE_CONF
 
 ################################################################################
 # System-wide locations (directories and URLs)
 ################################################################################
 
 
-# The root URL (usually /problemserver), set by <Location> in Apache configuration.
+# The root URL (usually /webwork2), set by <Location> in Apache configuration.
 $problemServerURLs{root}          = "$problemServer{host}/problemserver";
-$problemServerDirs{root}	  = "/your/problem_server/directory";
+
 
 # Contains non-web-accessible temporary files, such as TeX working directories.
 $problemServerDirs{tmp}           = "$problemServerDirs{root}/tmp";
@@ -43,7 +37,7 @@ $problemServerDirs{tmp}           = "$problemServerDirs{root}/tmp";
 # Location of system-wide web-accessible files, such as equation images, and
 # help files.
 $problemServerDirs{htdocs}        = "$problemServerDirs{root}/htdocs";
-$problemServerURLs{htdocs}        = "$problemServer{host}/problemserver_files";
+$problemServerURLs{htdocs}        = "$problemServer{host}/$problemserver_url_files";
 
 # Location of web-accessible temporary files, such as equation images.
 $problemServerDirs{htdocs_temp}   = "$problemServerDirs{htdocs}/tmp";
@@ -163,7 +157,7 @@ $pg{directories}{macros} = "$pg{directories}{root}/macros";
 $pg{directories}{macrosPath} = [
    ".",                     # search the problem file's directory
    $courseDirs{macros},
-   $pg{directories}{macros}
+   $pg{directories}{macros},
 ];
 
 # The applet search path. If a full URL is given, it is used unmodified. If an

@@ -1,7 +1,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.2 2007/07/13 20:35:48 mleventi Exp $
+# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.3 2007/08/01 07:36:14 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -15,45 +15,77 @@
 ################################################################################
 
 <Perl>
-my $problemserver_dir = "/your/problemserver/directory";
-$ENV{PROBLEMSERVER_ROOT} = $problemserver_dir;
 
-my $pg_dir = "/your/pg/directory";
+#REQUIRED
+
+#0) This variable must point to the hostname
+my $problemserver_host = "HOSTNAME";
+
+#1) This variable must point to the root of the problemserver directory
+my $problemserver_dir = "/path/to/problemserver";
+
+#2) This variable must point to the root of the pg directory
+my $pg_dir = "/path/to/pg";
+
+
+#OPTIONAL
+
+#3) This variable is the wsdl path
+my $problemserver_wsdl = "/problemserver_wsdl";
+
+#4) This variable is the rpc path
+my $problemserver_rpc = "/problemserver_rpc";
+
+#5) This variable is the base path for external maps
+my $problemserver_files_url = "/problemserver_files";
+
+#END OF CONFIG SECTION
+
+$ENV{PROBLEMSERVER_HOST} = $problemserver_host;
+$ENV{PROBLEMSERVER_ROOT} = $problemserver_dir;
+$ENV{PG_ROOT} = $pg_dir;
+$ENV{PROBLEMSERVER_WSDL} = $problemserver_wsdl;
+$ENV{PROBLEMSERVER_RPC} = $problemserver_rpc;
+$ENV{PROBLEMSERVER_URL_FILES} = $problemserver_files_url;
+
+
+my $problemserver_dir_htdocs = "$problemserver_dir/htdocs";
 
 eval "use lib '$problemserver_dir/lib'"; die $@ if $@;
 eval "use ProblemServer::Environment"; die $@ if $@;
 
-my $environ = new ProblemServer::Environment($problemserver_dir);
+my $environ = new ProblemServer::Environment($problemserver_dir,$ENV{PROBLEMSERVER_ROOT},$ENV{PROBLEMSERVER_HOST},$ENV{PG_ROOT},$ENV{PROBLEMSERVER_WSDL},$ENV{PROBLEMSERVER_RPC});
 
 eval "use lib '$pg_dir/lib'"; die $@ if $@;
 
-</Perl>
+$Apache2::PerlSections::Save = 1;
 
-PerlModule ProblemServer
+push @Alias, ["$problemserver_files_url","$problemserver_dir_htdocs"];
 
-Alias /problemserver_files /your/problemserver/directory/htdocs
-<Directory /your/problemserver/directory/htdocs>
-    Allow from all
-    AllowOverride None
-    Options FollowSymLinks
-    Order allow,deny
-</Directory>
+push @PerlModule, 'ProblemServer';
+
+$Directory{"$problemserver_dir_htdocs"} = {
+    Allow               => 'from all',
+    AllowOverride       => 'All',
+    Order               => 'allow,deny'
+};
 
 #PROBLEMSERVER SOAP CONFIGURATION
-<Location /problemserver_rpc>
-	PerlHandler Apache::SOAP
-	SetHandler perl-script
-	PerlSetVar dispatch_to "ProblemServer"
-	PerlSetVar options "compress_threshold => 10000"
-	Order Allow,Deny
-	Allow from All
-</Location>
+$Location{"$problemserver_rpc"} = {
+        PerlSetVar      => 'dispatch_to "ProblemServer"',
+	PerlHandler     => 'Apache::SOAP',
+	SetHandler      => 'perl-script',
+	Order           => 'allow,deny',
+	Allow           => 'from all'
+};
+
 #PROBLEMSERVER SOAP WSDL HANDLER :: TO BE REPLACED WITH A FILE FOR PRODUCTION SERVERS
-<Location /problemserver_wsdl>
-	PerlSetVar dispatch_to "ProblemServer::WSDL"
-	PerlSetVar options "compress_threshold => 10000"
-	PerlHandler ProblemServer::WSDL
-	SetHandler perl-script
-	Order Allow,Deny
-	Allow from All
-</Location>
+$Location{"$problemserver_wsdl"} = {
+	PerlSetVar      => 'options "compress_threshold => 10000"',
+	PerlHandler     => 'ProblemServer::WSDL',
+	SetHandler      => 'perl-script',
+	Order           => 'allow,deny',
+	Allow           => 'from all'
+};
+
+</Perl>

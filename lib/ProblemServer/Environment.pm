@@ -8,7 +8,7 @@ use Opcode qw(empty_opset);
 BEGIN { $main::VERSION = "2.3.2"; }
 
 sub new {
-    my ($self,$path) = @_;
+    my ($self,$path,$host,$pgroot,$wsdl,$rpc,$psfileurl) = @_;
     my $safe = Safe->new;
 
     # Compile the "include" function with all opcodes available.
@@ -38,9 +38,21 @@ sub new {
     $@ and die "Failed to reval include subroutine: $@";
     $safe->mask($maskBackup);
 
+    #Cant seem to pass variables into global.conf since its safe, so hack
+    my $preps = '$problemServer{host} = "' . $host . '";' .
+        ' $problemServer{wsdl} = "' . $host  . $wsdl .'";' .
+        ' $problemServer{rpc}  = "' . $host  . $rpc . '";' .
+        ' $pg_dir              = "' . $pgroot . '";' .
+        ' $problemserver_url_files = "' . $psfileurl . '";' .
+        ' $problemServerDirs{root} = "' . $path . '";';
+    #die $preps;
+    #$safe->reval($preps);
     my $globalEnvironmentFile = "$path/conf/global.conf";
-
     my $globalFileContents = readFile($globalEnvironmentFile);
+
+    $globalFileContents =~ s/MARKER_FOR_APACHE_CONF/$preps/;
+    #die $globalFileContents;
+    #$globalFileContents = $preps.'\n'.$globalFileContents;
     $safe->reval($globalFileContents);
 
     $@ and die "Could not evaluate global environment file $globalEnvironmentFile: $@";
@@ -68,7 +80,6 @@ sub new {
             $self->{$name} = \%hash;
 	}
     }
-
     bless $self;
     return $self;
 

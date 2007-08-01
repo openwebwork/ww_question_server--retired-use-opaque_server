@@ -36,14 +36,20 @@ use constant DISPLAY_MODES => {
 sub new {
     my $self = shift;
     $self = {};
-
-
-
+    #Base Conf
+    $main::VERSION = "2.3.2";
     #Construct the Server Environment
-    my $serverEnviron = new ProblemServer::Environment($ENV{PROBLEMSERVER_ROOT});
+    my $serverEnviron = new ProblemServer::Environment($ENV{PROBLEMSERVER_ROOT},
+                                                       $ENV{PROBLEMSERVER_HOST},
+                                                       $ENV{PG_ROOT},
+                                                       $ENV{PROBLEMSERVER_WSDL},
+                                                       $ENV{PROBLEMSERVER_RPC},
+                                                       $ENV{PROBLEMSERVER_URL_FILES});
+
 
     #Keep the Default Server Environment
     $self->{serverEnviron} = $serverEnviron;
+
     #Keep the Default Problem Environment
     $self->{problemEnviron} = ($self->{serverEnviron}{problemEnviron});
     #Create Safe Compartment
