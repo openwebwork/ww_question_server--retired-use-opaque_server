@@ -1,7 +1,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.3 2007/08/01 07:36:14 mleventi Exp $
+# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.4 2007/08/01 13:03:23 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -73,7 +73,7 @@ $Directory{"$problemserver_dir_htdocs"} = {
 #PROBLEMSERVER SOAP CONFIGURATION
 $Location{"$problemserver_rpc"} = {
         PerlSetVar      => 'dispatch_to "ProblemServer"',
-	PerlHandler     => 'Apache::SOAP',
+	PerlHandler     => 'Apache2::SOAP',
 	SetHandler      => 'perl-script',
 	Order           => 'allow,deny',
 	Allow           => 'from all'
