@@ -40,12 +40,7 @@ sub new {
     #Base Conf
     $main::VERSION = "2.3.2";
     #Construct the Server Environment
-    my $serverEnviron = new ProblemServer::Environment($ENV{PROBLEMSERVER_ROOT},
-                                                       $ENV{PROBLEMSERVER_HOST},
-                                                       $ENV{PG_ROOT},
-                                                       $ENV{PROBLEMSERVER_WSDL},
-                                                       $ENV{PROBLEMSERVER_RPC},
-                                                       $ENV{PROBLEMSERVER_URL_FILES});
+    my $serverEnviron = new ProblemServer::Environment($ProblemServer::RootDir);
 
 
     #Keep the Default Server Environment
