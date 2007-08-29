@@ -1,31 +1,41 @@
-Webwork Problem Server
------------------------------------
+Webwork Question Server
+----------------------
+Version: 0.2 (stable)
+Maintainer: Matthew Leventi  <mleventi@gmail.com>
+CVS: cvs.webwork.rochester.edu:/webwork/cvs/system ww_question_server
 
-1) Setup
-    a) Change permissions for directories writable by server
+** If your using this send me an email **
+
+Note: You don't need to install the WeBWorK system for this server to function. All you need are the PG libraries.
+
+Whats new:
+* Simple install with script. 
+* Code refactoring
+* One translator per child, (speed boost)
+* Fixed WSDL errors
+* Minor bug fixes
+
+Prerequisites:
+* Pod::WSDL CPAN Module
+* Apache 1 or 2
+* mod_perl
+* Apache::SOAP CPAN Module for apache 1, or Apache2::SOAP CPAN Module for apache2
+* latex and dvipng installed
+* WeBWorK PG libraries installed
+
+Setup:
+    1) Change permissions for directories writable by server
         chmod -R 777 htdocs/tmp
         chmod -R 777 tmp
+    2) Run the setup program in bin/setup
+	  perl setup.pl
+        Write down the WSDL path that the setup program gives you. It is what you use in the Moodle - WeBWorK Question Type.
+    3) Copy the following files to the following places
+        bin/setup/WSDL.wsdl 				-> htdocs/WSDL.wsdl
+	  bin/setup/global.conf 			-> conf/global.conf
+	  bin/setup/problemserver.apache-config 	-> conf/problemserver.apache-config
+    4) Include problemserver.apache-config in your apache configuration file.
+	  Note: The problemserver.apache-config works for both apache 1 and 2.
+	  ex) Include /home/you/problemserver/conf/problemserver.apache-config
+    6) Restart Apache
 
-
-2) Configuration
-    The main changes in configuration are in the top of global.conf and in problemserver.apache2-config
-    In problemserver.apache2-config:
-        $problemserver_dir  = The root directory where the problemserver is installed.
-        $pg_dir             = The root directory where the pg is installed.
-        The Alias command should be changed to point to the root directory of problemserver + "/htdocs"
-            ex) Alias /problemserver_files /home/you/problemserver/htdocs
-        The Directory line should be changed to be the same as the second part of the Alias command above
-            ex) <Directory /home/you/problemserver/htdocs>
-    In global.conf
-        $problemServer{host}	= The host the problem server is installed on
-            ex) "http://www.example.org";
-        $pg_dir              	= Same as the $pg_dir for problemserver.apache2-config
-	$problemServerDirs{root}= Same as the $problemserver_dir for problemserver.apache2-config
-
-        Note: Make sure the paths to the external programs are set correctly for your system.
-        Optionally: On line 163 you can add more paths to look for macro files.
-
-    Finally you need to add an Include statement to your apache2.conf file. This should be located in /etc/apache2/apache2.conf under most systems.
-        ex) Include /home/you/problemserver/conf/problemserver.apache2-config
-
-3) Restart Apache2

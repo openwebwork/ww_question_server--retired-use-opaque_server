@@ -8,13 +8,13 @@ use Opcode qw(empty_opset);
 BEGIN { $main::VERSION = "2.3.2"; }
 
 sub new {
-    my ($self,$path) = @_;
+    my ($self) = @_;
     my $safe = Safe->new;
 
     # Compile the "include" function with all opcodes available.
         my $include = q[ sub include {
 		my ($file) = @_;
-		my $fullPath = "].$path.q[/$file";
+		my $fullPath = "].$ProblemServer::RootDir.q[/$file";
 		# This regex matches any string that begins with "../",
 		# ends with "/..", contains "/../", or is "..".
 		if ($fullPath =~ m!(?:^|/)\.\.(?:/|$)!) {
@@ -40,8 +40,14 @@ sub new {
 
     #die $preps;
     #$safe->reval($preps);
-    my $globalEnvironmentFile = "$path/conf/global.conf";
+    my $globalEnvironmentFile = $ProblemServer::RootDir . "/conf/global.conf";
     my $globalFileContents = readFile($globalEnvironmentFile);
+
+    my $settings = "\$ProblemServer::RootDir = '" . $ProblemServer::RootDir . "';\n";
+    $settings .= "\$ProblemServer::RootPGDir = '" . $ProblemServer::RootPGDir . "';\n";
+    $settings .= "\$ProblemServer::Host = '" . $ProblemServer::Host . "';\n";
+    $settings .= "\$ProblemServer::FilesURL = '" . $ProblemServer::FilesURL . "';\n";
+    $safe->reval($settings);
 
     #die $globalFileContents;
     #$globalFileContents = $preps.'\n'.$globalFileContents;

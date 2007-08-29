@@ -1,7 +1,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/problemserver.apache2-config.dist,v 1.5 2007/08/02 07:00:15 mleventi Exp $
+# $CVSHeader: ww_question_server/bin/setup/problemserver.apache-config.base,v 1.1 2007/08/18 15:03:41 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -30,6 +30,7 @@ eval "use lib '$root_pg_dir/lib'"; die $@ if $@;
 #Load the Module
 push @PerlModule, 'ProblemServer';
 
+$ProblemServer::Host = $hostname;
 $ProblemServer::RootDir = $root_dir;
 $ProblemServer::RootPGDir = $root_pg_dir;
 $ProblemServer::RPCURL = $rpc_url;

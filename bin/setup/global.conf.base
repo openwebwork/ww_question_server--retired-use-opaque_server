@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/conf/global.conf.dist,v 1.6 2007/08/01 13:03:23 mleventi Exp $
+# $CVSHeader: ww_question_server/bin/setup/global.conf.base,v 1.1 2007/08/18 15:03:41 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -29,10 +29,6 @@ $problemServerURLs{root} = $ProblemServer::FilesUrl;
 ################################################################################
 # System-wide locations (directories and URLs)
 ################################################################################
-
-
-# The root URL (usually /webwork2), set by <Location> in Apache configuration.
-$problemServerURLs{root}          = "$problemServer{host}/problemserver";
 
 
 # Contains non-web-accessible temporary files, such as TeX working directories.
@@ -66,29 +62,8 @@ $problemServerURLs{LaTeXMathML}   = "$problemServerURLs{htdocs}/LaTeXMathML/LaTe
 
 
 # equation rendering/hardcopy utiltiies
-$externalPrograms{latex}    = "/usr/bin/latex";
-$externalPrograms{pdflatex} = "/usr/bin/pdflatex --shell-escape";
-$externalPrograms{dvipng}   = "/usr/bin/dvipng";
-$externalPrograms{tth}      = "/usr/bin/tth";
-
-# NetPBM - basic image manipulation utilities
-# Most sites only need to configure $netpbm_prefix.
-my $netpbm_prefix = "/usr/bin";
-$externalPrograms{giftopnm} = "$netpbm_prefix/giftopnm";
-$externalPrograms{ppmtopgm} = "$netpbm_prefix/ppmtopgm";
-$externalPrograms{pnmtops}  = "$netpbm_prefix/pnmtops";
-$externalPrograms{pnmtopng} = "$netpbm_prefix/pnmtopng";
-$externalPrograms{pngtopnm} = "$netpbm_prefix/pngtopnm";
-
-# url checker
-$externalPrograms{checkurl} = "/usr/local/bin/lwp-request -mHEAD "; # or "/usr/local/bin/w3c -head "
-
-# image conversions utiltiies
-# the source file is given on stdin, and the output expected on stdout.
-$externalPrograms{gif2eps} = "$externalPrograms{giftopnm} | $externalPrograms{ppmtopgm} | $externalPrograms{pnmtops} -noturn 2>/dev/null";
-$externalPrograms{png2eps} = "$externalPrograms{pngtopnm} | $externalPrograms{ppmtopgm} | $externalPrograms{pnmtops} -noturn 2>/dev/null";
-$externalPrograms{gif2png} = "$externalPrograms{giftopnm} | $externalPrograms{pnmtopng}";
-
+$externalPrograms{latex}    = "MARKER_FOR_LATEX";
+$externalPrograms{dvipng}   = "MARKER_FOR_DVIPNG";
 
 
 ################################################################################

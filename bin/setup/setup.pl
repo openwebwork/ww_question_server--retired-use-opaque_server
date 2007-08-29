@@ -7,24 +7,28 @@ print "This script will setup the configuration of WeBWorK Question Server.\n";
 print "Continue? (y,n):";
 $input = <STDIN>;
 chop $input;
-if($input eq "n") {
-    exit;
-}
+if($input eq "n") {exit;}
 
-$filename = "problemserver.apache-config";
 
+#APACHE 1 OR 2
 print "Will you be using Apache 1 or 2\n";
 print "(1,2)>";
 $apache = <STDIN>;
 chop $apache;
 if($apache eq "1") {
-    $apache = "Apache::SOAP";
+    $apachecpan = "Apache::SOAP";
 } elsif ($apache eq "2") {
-    $apache = "Apache2::SOAP";
+    $apachecpan = "Apache2::SOAP";
+} else {
+    exit;
 }
 
+
+#HOSTNAME
+$hostnameExample = "http://www.example.com/";
+
 print "Please enter the http hostname of the computer.\n";
-print "This should be a value like 'http://www.example.com'\n";
+print "This should be a value like '$hostnameExample'\n";
 print ">";
 $hostname = <STDIN>;
 chop $hostname;
@@ -41,33 +45,29 @@ print ">";
 $pg = <STDIN>;
 chop $pg;
 
-print "Do you want to configure optional components.\n";
-print "(y,n)>";
-$input = <STDIN>;
-chop $input;
-if($input eq "y") {
-
-    print "Please enter a rpc URL path. Leave blank for default.\n";
-    print "Default: '/problemserver_rpc'\n";
-    print ">";
-    $rpc = <STDIN>;
-    chop $rpc;
-    if($rpc eq "") {
-        $rpc = "/problemserver_rpc";
-    }
-
-    print "Please enter a URL path where equation files will be stored. Leave blank for default.\n";
-    print "Default: '/problemserver_files'\n";
-    print ">";
-    $files = <STDIN>;
-    chop $files;
-    if($files eq "") {
-        $files = "/problemserver_files";
-    }
-} else {
-    $rpc = "/problemserver_rpc";
-    $files = "/problemserver_files";
+print "Please enter the path to 'latex' command. Leave blank for default. \n";
+print "Default '/usr/bin/latex'\n";
+print ">";
+$latex = <STDIN>;
+chop $latex;
+if($latex eq "") {
+    $latex = "/usr/bin/latex";
 }
+
+print "Please enter the path to 'dvipng' command. Leave blank for default. \n";
+print "Default '/usr/bin/dvipng'\n";
+print ">";
+$dvipng = <STDIN>;
+chop $dvipng;
+if($dvipng eq "") {
+    $dvipng = "/usr/bin/dvipng";
+}
+
+
+
+
+$rpc = "/problemserver_rpc";
+$files = "/problemserver_files";
 
 
 #WSDL FILE CREATION
@@ -80,8 +80,8 @@ $pod = new Pod::WSDL(
         pretty => 1,
         withDocumentation => 0
         );
+
 $wsdlfilename = "WSDL.wsdl";
-$filename = "problemserver.apache-config";
 open(OUTP, ">$wsdlfilename") or die("Cannot open file '$wsdlfilename' for writing.\n");
 print OUTP $pod->WSDL;
 close OUTP;
@@ -89,6 +89,8 @@ print "Done\n";
 
 #APACHE CONFIGURATION FILE CREATION
 print "Creating Apache Configuration File...\n";
+
+$conffilename = "problemserver.apache-config";
 
 print "   Setting Variables...\n";
 $additionalconf = "my \$hostname = '$hostname';\n";
@@ -109,10 +111,10 @@ while(<INPUT>)
 }
 close INPUT;
 $content =~ s/MARKER_FOR_CONF/$additionalconf/;
-$content =~ s/MARKER_FOR_APACHE/$apache/;
+$content =~ s/MARKER_FOR_APACHE/$apachecpan/;
 
 print "   Writing...\n";
-open(OUTP2, ">$filename") or die("Cannot open file '$filename' for writing.\n");
+open(OUTP2, ">$conffilename") or die("Cannot open file '$conffilename' for writing.\n");
 print OUTP2 $content;
 close OUTP2;
 print "Done\n";
@@ -129,17 +131,14 @@ while(<INPUT2>)
     $content .= $line;
 }
 close INPUT2;
+$content =~ s/MARKER_FOR_DVIPNG/$dvipng/;
+$content =~ s/MARKER_FOR_LATEX/$latex/;
 print "   Writing...\n";
 open(OUTP3, ">global.conf") or die("Cannot open file 'global.conf' for writing.\n");
 print OUTP3 $content;
 close OUTP3;
 print "Done\n";
 
+print "Your WSDL path: '" . $hostname . $files . '/'.$wsdlfilename."'\n";
+
 #POST CONFIGURATION
-print "\n\n\n";
-print "####POST SETUP#####\n";
-print "You need the '$apache' CPAN Module installed.\n";
-print "You need to move 'global.conf' into the conf/ directory.\n";
-print "You need to move '$filename' into the conf/ directory.\n";
-print "You need to include '$filename' in the apache configuration file.\n";
-print "You need to move '$wsdlfilename' into the htdocs/ directory. \n";
