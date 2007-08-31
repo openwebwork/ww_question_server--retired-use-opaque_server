@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/bin/setup/global.conf.base,v 1.1 2007/08/18 15:03:41 mleventi Exp $
+# $CVSHeader: ww_question_server/bin/setup/global.conf.base,v 1.2 2007/08/29 04:31:58 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -23,7 +23,7 @@ $problemServer{host} = $ProblemServer::Host;
 
 $problemServerDirs{root} = $ProblemServer::RootDir;
 
-$problemServerURLs{root} = $ProblemServer::FilesUrl;
+$problemServerURLs{root} = $ProblemServer::FilesURL;
 
 
 ################################################################################
