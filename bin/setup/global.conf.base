@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: ww_question_server/bin/setup/global.conf.base,v 1.2 2007/08/29 04:31:58 mleventi Exp $
+# $CVSHeader: ww_question_server/bin/setup/global.conf.base,v 1.3 2007/08/31 22:56:32 mleventi Exp $
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -64,6 +64,7 @@ $problemServerURLs{LaTeXMathML}   = "$problemServerURLs{htdocs}/LaTeXMathML/LaTe
 # equation rendering/hardcopy utiltiies
 $externalPrograms{latex}    = "MARKER_FOR_LATEX";
 $externalPrograms{dvipng}   = "MARKER_FOR_DVIPNG";
+$externalPrograms{tth}      = "MARKER_FOR_TTH";
 
 
 ################################################################################
@@ -249,15 +250,16 @@ $pg{ansEvalDefaults} = {
 #define the problem environment
 
 #psvn
-$problemEnviron{psvn}               	= "1";
+$problemEnviron{psvn}               	= "PSVN";
 $problemEnviron{psvnNumber}         	= $problemEnviron{psvn};
+$problemEnviron{setNumber}              = $problemEnviron{psvn};
 
 #problemNum
-$problemEnviron{probNum}            	= "1";
+$problemEnviron{probNum}            	= "PROBNUM";
 $problemEnviron{questionNumber}     	= $problemEnviron{probNum};
 
 #fileName
-$problemEnviron{fileName}           	= "ServerFile";
+$problemEnviron{fileName}           	= "FILENAME";
 $problemEnviron{probFileName}       	= $problemEnviron{fileName};
 
 #seed
@@ -300,6 +302,17 @@ $problemEnviron{localHelpURL}           = $problemServerURLs{local_help}."/";
 $problemEnviron{jsMathURL}              = $problemServerURLs{jsMath};
 $problemEnviron{asciimathURL}	        = $problemServerURLs{asciimath};
 $problemEnviron{LaTeXMathMLURL}	        = $problemServerURLs{LaTeXMathML};
+
+#More Problem Environment Configuration
+$problemEnviron{htmlDirectory}          = ' ';
+$problemEnviron{htmlURL}                = ' ';
+$problemEnviron{tempURL}                = $problemServerURLs{htdocs_temp} . '/';
+$problemEnviron{tempDirectory}          = $problemServerDirs{htdocs_temp} . '/';
+$problemEnviron{templateDirectory}      = $problemServerDirs{htdocs_temp} . '/';
+
+$problemEnviron{setName}                = "QuestionServer";
+$problemEnviron{studentLogin}           = "guest";
+
 
 
 #Default answers to fill blanks with.

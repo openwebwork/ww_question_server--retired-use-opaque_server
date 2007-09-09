@@ -63,6 +63,15 @@ if($dvipng eq "") {
     $dvipng = "/usr/bin/dvipng";
 }
 
+print "Please enter the path to 'tth' command. Leave blank for default. \n";
+print "Default '/usr/bin/tth'\n";
+print ">";
+$tth = <STDIN>;
+chop $tth;
+if($tth eq "") {
+    $tth = "/usr/bin/tth";
+}
+
 
 
 
@@ -133,6 +142,7 @@ while(<INPUT2>)
 close INPUT2;
 $content =~ s/MARKER_FOR_DVIPNG/$dvipng/;
 $content =~ s/MARKER_FOR_LATEX/$latex/;
+$content =~ s/MARKER_FOR_TTH/$tth/;
 print "   Writing...\n";
 open(OUTP3, ">global.conf") or die("Cannot open file 'global.conf' for writing.\n");
 print OUTP3 $content;

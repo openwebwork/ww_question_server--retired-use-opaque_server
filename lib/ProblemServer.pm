@@ -6,6 +6,10 @@ use warnings;
 
 use MIME::Base64 qw( encode_base64 decode_base64);
 
+use Safe;
+
+use LWP::Simple;
+
 use ProblemServer::Environment;
 use ProblemServer::Utils::RestrictedClosureClass;
 
@@ -47,6 +51,7 @@ sub new {
     #Construct the Server Environment
     my $serverEnviron = new ProblemServer::Environment();
 
+    $SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
     #Keep the Default Server Environment
     $self->{serverEnviron} = $serverEnviron;
@@ -54,15 +59,16 @@ sub new {
     #Keep the Default Problem Environment
     $self->{problemEnviron} = ($self->{serverEnviron}{problemEnviron});
 
-    #Create Safe Compartment
-    $self->{safe} = new Safe;
-
     bless $self;
     return $self;
 }
 
 sub setupTranslator {
     my $self = shift;
+
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     #Create Translator Object
     my $translator = WeBWorK::PG::Translator->new;
 
@@ -95,6 +101,9 @@ sub setupTranslator {
 sub setupImageGenerator {
     my $self = shift;
 
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     my $image_generator;
     my %imagesModeOptions = %{$self->{serverEnviron}->{pg}{displayModeOptions}{images}};
     $image_generator = WeBWorK::PG::ImageGenerator->new(
@@ -121,12 +130,30 @@ BEGIN {
     $ProblemServer::theServer->setupImageGenerator();
 }
 
+sub downloadFiles {
+    my ($self,$files) = @_;
+    foreach(@{$files}) {
+        my $fileurl = decode_base64($_);
+        my $lastslash = rindex($fileurl,'/');
+        my $filepath = $self->{serverEnviron}->{problemServerDirs}->{htdocs_temp} . substr($fileurl,$lastslash);
+        mirror($fileurl,$filepath);
+    }
+}
+
 sub runTranslator {
     my ($self,$source,$seed) = @_;
+
+    #Warnings are passed into sel    local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
     $source = decode_base64($source);
     #Assigning Seed
     $self->{problemEnviron}{problemSeed} = $seed;
+
+    #Clear some stuff
+    $self->{translator}->{safe} = undef;
+    $self->{translator}->{envir} = undef;
+
+    $self->{translator}->{safe} = new Safe;
 
     #Setting Environment
     $self->{translator}->environment($self->{problemEnviron});
@@ -134,9 +161,12 @@ sub runTranslator {
     #Initializing
     $self->{translator}->initialize();
 
+    #Safe
+    #$self->{safe} = new Safe;
+
     #PRE-LOAD MACRO FILES
     eval{$self->{translator}->pre_load_macro_files(
-        $self->{safe},
+        new Safe,
 	$self->{serverEnviron}->{pg}->{directories}->{macros},
 	'PG.pl', 'dangerousMacros.pl','IO.pl','PGbasicmacros.pl','PGanswermacros.pl'
     )};
@@ -164,6 +194,10 @@ sub runTranslator {
 
 sub runChecker {
     my $self = shift;
+
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     my $answerArray = shift;
 
     my $answerHash = {};
@@ -237,16 +271,28 @@ sub runChecker {
 
 sub runImageGenerator {
     my $self = shift;
+
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     $self->{imageGenerator}->render(body_text => $self->{translator}->r_text);
 }
 
 sub runImageGeneratorAnswers {
     my $self = shift;
+
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     $self->{imageGenerator}->render();
 }
 
 sub buildProblemResponse {
     my $self = shift;
+
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+
     my $response = new ProblemServer::ProblemResponse;
     $response->{errors} = $self->{translator}->errors;
     $response->{warnings} = $self->{warnings};
@@ -257,6 +303,7 @@ sub buildProblemResponse {
 sub clean {
     my $self = shift;
     $self->{translator}->{errors} = undef;
+    $self->{warnings} = "";
 
 
 }
@@ -288,7 +335,7 @@ _RETURN $ProblemServer::ProblemResponse The Problem Response
 sub renderProblem {
     my ($self,$request) = @_;
     my $server = $ProblemServer::theServer;
-
+    $server->downloadFiles($request->{files});
     $server->runTranslator($request->{code},$request->{seed});
     $server->runImageGenerator();
 
@@ -311,6 +358,7 @@ sub renderProblems {
 
     foreach($requests) {
         my $request = $_;
+	$server->downloadFiles($request->{files});
         $server->runTranslator($request->{code},$request->{seed});
         $server->runImageGenerator();
         my $response = $server->buildProblemResponse();
@@ -333,6 +381,9 @@ sub generateProblem {
 
     my $trials = $request->{trials};
     my $problem = $request->{problem};
+
+    $server->downloadFiles($problem->{files});
+
     my @derivedProblems;
     my $found;
     my $problemResponse;
@@ -370,6 +421,7 @@ sub generateProblems {
         my $request = $_;
         my $trials = $request->{trials};
         my $problem = $request->{problem};
+	$server->downloadFiles($problem->{files});
         my @derivedProblems;
         my $found;
         for(my $itr = 0; $itr < $trials ; $itr++ ) {

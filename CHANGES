@@ -1,0 +1,11 @@
+CHANGES LOG:
+
+Version 2: (August 2007)
+* Simple install with script.
+* Code refactoring
+* One translator per child, (speed boost)
+* Fixed WSDL errors
+* Minor bug fixes
+
+Version 1: (July 2007)
+* Initial Release
