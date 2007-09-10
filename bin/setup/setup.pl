@@ -266,6 +266,11 @@ if($copyFiles eq 'y') {
     system('mv WSDL.wsdl ' . $root . '/htdocs/WSDL.wsdl');
 }
 
+print "Setting Directory Permissions\n";
+system("chmod -R 777 $root/tmp");
+system("chmod -R 777 $root/htdocs/tmp");
+print "Done\n";
+
 print "********************************\n";
 print "Your WSDL path: '" . $hostname . $files . '/'.$wsdlfilename."'\n";
 print "********************************\n";

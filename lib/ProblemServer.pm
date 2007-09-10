@@ -51,7 +51,7 @@ sub new {
     #Construct the Server Environment
     my $serverEnviron = new ProblemServer::Environment();
 
-    $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+    #$SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
     #Keep the Default Server Environment
     $self->{serverEnviron} = $serverEnviron;
