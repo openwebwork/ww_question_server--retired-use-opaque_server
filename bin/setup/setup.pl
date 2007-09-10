@@ -229,7 +229,7 @@ while(<INPUT>)
 }
 close INPUT;
 $content =~ s/MARKER_FOR_CONF/$additionalconf/;
-$content =~ s/MARKER_FOR_APACHE/$apachecpan/;
+$content =~ s/MARKER_FOR_APACHE/$apacheSoapCPAN/;
 
 print "   Writing...\n";
 open(OUTP2, ">$conffilename") or die("Cannot open file '$conffilename' for writing.\n");
