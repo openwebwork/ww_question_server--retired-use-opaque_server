@@ -59,6 +59,8 @@ sub new {
     #Keep the Default Problem Environment
     $self->{problemEnviron} = ($self->{serverEnviron}{problemEnviron});
 
+    $self->{safe} = new Safe;
+
     bless $self;
     return $self;
 }
@@ -166,7 +168,7 @@ sub runTranslator {
 
     #PRE-LOAD MACRO FILES
     eval{$self->{translator}->pre_load_macro_files(
-        new Safe,
+        $self->{safe},
 	$self->{serverEnviron}->{pg}->{directories}->{macros},
 	'PG.pl', 'dangerousMacros.pl','IO.pl','PGbasicmacros.pl','PGanswermacros.pl'
     )};
@@ -298,6 +300,7 @@ sub buildProblemResponse {
     $response->{warnings} = $self->{warnings};
     $response->{output} = encode_base64(${$self->{translator}->r_text});
     $response->{seed} = $self->{translator}->{envir}{problemSeed};
+    $response->{grading} = $self->{translator}->rh_flags->{showPartialCorrectAnswers};
     return $response;
 }
 sub clean {

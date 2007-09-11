@@ -6,6 +6,7 @@ package ProblemServer::ProblemResponse;
         _ATTR warnings      $string Any warnings from translation
         _ATTR errors        $string Any errors from translation
         _ATTR seed          $string The seed of the question.
+        _ATTR grading       $string The grading option for the question.
 =end WSDL
 =cut
 sub new {
@@ -16,6 +17,7 @@ sub new {
     $self->{warnings}   = "";
     $self->{errors}     = "";
     $self->{seed}       = "";
+    $self->{grading}    = "";
     bless $self;
     return $self;
 }

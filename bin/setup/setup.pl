@@ -266,19 +266,40 @@ if($copyFiles eq 'y') {
     system('mv WSDL.wsdl ' . $root . '/htdocs/WSDL.wsdl');
 }
 
-print "Setting Directory Permissions\n";
-system("chmod -R 777 $root/tmp");
-system("chmod -R 777 $root/htdocs/tmp");
-print "Done\n";
+
+$dirPerm = promptUser('Do you want me to set directory permissions(requires sudo) (y,n)','y');
+if($dirPerm eq 'y') {
+   print "Setting Directory Permissions\n";
+   system("sudo chmod -R 777 $root/tmp");
+   system("sudo chmod -R 777 $root/htdocs/tmp");
+   print "Done\n";
+}
 
 print "********************************\n";
 print "Your WSDL path: '" . $hostname . $files . '/'.$wsdlfilename."'\n";
 print "********************************\n";
 
 print "POST INSTALL\n";
-print "1) Append the following line to your apache configuration file:\n";
-print "Include $root/conf/problemserver.apache-config\n\n";
+$i = 1;
+if($copyFiles eq 'n') {
+   print "$i) Copy the following files to their respective destinations\n";
+   print "global.conf" . '                 => ' . $root . "/conf/global.conf\n";
+   print "problemserver.apache-config" . ' => ' .$root . "/conf/problemserver.apache-config\n";
+   print "WSDL.wsdl" . '                   => ' . $root . "/htdocs/WSDL.wsdl\n\n";
+   $i++;
+}
 
-print "2) Restart Apache\n";
+if($dirPerm eq 'n') {
+   print "$i) Set the permissions on the following directories so they are read/write accessible by your webserver\n";
+   print "$root/tmp\n";
+   print "$root/htdocs/tmp\n\n";
+   $i++;
+}
+
+print "$i) Append the following line to your apache configuration file:\n";
+print "Include $root/conf/problemserver.apache-config\n\n";
+$i++;
+
+print "$i) Restart Apache\n";
 
 print "Your done, Enjoy!\n";
