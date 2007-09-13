@@ -1,48 +1,12 @@
 Webwork Question Server
 ----------------------
-Version: 0.3 (stable)
+Version: 1.0 (stable RC1)
 Maintainer: Matthew Leventi  <mleventi@gmail.com>
 CVS: cvs.webwork.rochester.edu:/webwork/cvs/system ww_question_server
 
 ** If your using this send me an email **
 
-Note: You don't need to install the WeBWorK system for this server to function. All you need are the PG libraries.
-
-Whats new:
-* Safe compartment errors fixed.
-* Automatic downloading of external files for PG questions.
-* Many bug fixes
-* Added tth support.
---
-* Simple install with script.
-* Code refactoring
-* One translator per child, (speed boost)
-* Fixed WSDL errors
-* Minor bug fixes
-
-Prerequisites:
-* Pod::WSDL CPAN Module
-* Apache 1 or 2
-* mod_perl
-* Apache::SOAP CPAN Module for apache 1, or Apache2::SOAP CPAN Module for apache2
-* LWP::Simple module
-* latex,dvipng,tth installed
-* WeBWorK PG libraries installed
+Note: You don't need to install the WeBWorK system for this server to function. All you need is the PG libraries.
 
 Setup:
-    1) Change permissions for directories writable by server
-        chmod -R 777 htdocs/tmp
-        chown -R www-data:www-data htdocs/tmp
-        chmod -R 777 tmp
-        chown -R www-data:www-data tmp
-    2) Run the setup program in bin/setup
-	  perl setup.pl
-        Write down the WSDL path that the setup program gives you. It is what you use in the Moodle - WeBWorK Question Type.
-    3) Copy the following files to the following places
-        bin/setup/WSDL.wsdl 				-> htdocs/WSDL.wsdl
-	  bin/setup/global.conf 			-> conf/global.conf
-	  bin/setup/problemserver.apache-config 	-> conf/problemserver.apache-config
-    4) Include problemserver.apache-config in your apache configuration file.
-	  Note: The problemserver.apache-config works for both apache 1 and 2.
-	  ex) Include /home/you/problemserver/conf/problemserver.apache-config
-    6) Restart Apache
+	1) Run the bin/setup/setup.pl

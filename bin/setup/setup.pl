@@ -116,7 +116,7 @@ print "#WeBWorK Question Server          #\n";
 print "###################################\n";
 
 #Continue?
-print "This script will setup the configuration of WeBWorK Question Server.\n";
+print "This script will setup the WeBWorK Question Server.\n";
 $continue = promptUser('Continue','y');
 if($continue ne "y") {
     exit;
