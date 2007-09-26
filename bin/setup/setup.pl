@@ -149,7 +149,7 @@ if($apacheVersion eq '1') {
 #CPAN Module Administration
 $preqCheck = promptUser("Check CPAN Prerequisites(y,n)",'y');
 if($preqCheck eq 'y') {
-    @modulesNeeded = ($modperlCPAN,$apacheSoapCPAN,'LWP::Simple','Pod::WSDL','Safe','MIME::Base64','File::Which');
+    @modulesNeeded = ($modperlCPAN,$apacheSoapCPAN,'LWP::Simple','Pod::WSDL','Safe','MIME::Base64','File::Which','GD');
     @manuallyNeeded = moduleInstaller(@modulesNeeded);
 
     $manuallyNeededCount = @manuallyNeeded;
