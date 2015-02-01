@@ -31,8 +31,13 @@ use OpaqueServer::ProblemResponse;
 use OpaqueServer::GeneratorRequest;
 use OpaqueServer::GeneratorResponse;
 
+use OpaqueServer::StartReturn;
+use OpaqueServer::ProcessReturn;
+
 use WeBWorK::PG::Translator;
 use WeBWorK::PG::ImageGenerator;
+
+
 
 use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
@@ -409,155 +414,155 @@ sub hello {
 }
 
 
+# =pod
+# =begin WSDL
+# _IN request $OpaqueServer::ProblemRequest The Problem Request
+# _RETURN $OpaqueServer::ProblemResponse The Problem Response
+# =end WSDL
+# =cut
+# sub renderProblem {
+#     my ($self,$request) = @_;
+#     warn "\n\nentering renderProblem with new request \n";
+#     $request->{env}->{displayMode} = translateDisplayModeNames($request->{env}->{displayMode});
+#     #warn " \n\n displayMode is ", $request->{env}->{displayMode};
+#     my $server = $ProblemServer::theServer;
+#     $server->setupTranslator();
+#     $server->setupImageGenerator();
+#     #warn "run translator ".decode_base64($request->{code});
+#     $server->runTranslator($request->{code},$request->{env});
+#     warn "done with translator run image generator";
+#     eval{ $server->runImageGenerator();};
+#     warn "Errors from image generator $@ " if $@;
+#     warn "done with image generator run buildProblem response";
+# 
+#     my $response = $server->buildProblemResponse();
+#     #warn "done with buildProblemResponse";
+#     warn "________________\n";
+#     warn " body text  from render is". decode_base64( $response->{output} );
+#     warn "_______________\n";
+#     $server->clean();
+#     $server->cleanServer();
+#     warn "complete response is ", join (" ", keys %$response);
+#     return $response;
+# }
+# 
+# =pod
+# =begin WSDL
+# _IN requests @OpaqueServer::ProblemRequest The Problem Requests
+# _RETURN @OpaqueServer::ProblemResponse The Problem Response
+# =end WSDL
+# =cut
+# sub renderProblemAndCheck {
+#     my ($self,$request,$answers) = @_;
+#     warn "\n\nentering renderProblemandCheck with request \n";
+#     warn "ANSWERS SUBMITTED are\n ", pretty_print_text($answers) ;
+#     @$answers =  grep { decode_base64($_->{field}) =~/^0AnS/} @$answers;
+#     warn "ANSWERS SUBMITTED FILTERED are\n ", join(" ", map {decode_base64($_->{field})."=>".decode_base64($_->{answer})} @$answers);
+#     $request->{env}->{displayMode} = translateDisplayModeNames($request->{env}->{displayMode});
+#     
+#     my $server = $ProblemServer::theServer;
+#     $server->setupTranslator();
+#     eval {
+#     $server->setupImageGenerator();
+#     };
+#     warn "renderProblemAndCheck: errors in image generator $@" if $@;
+#     warn "renderProblemAndCheck running translator";
+#     $server->runTranslator($request->{code},$request->{env});
+#     ###############################################################
+#     warn "run answer checker";
+#     my $ansresults = $server->runChecker($answers);
+#     warn "done with answer checker";
+#     warn "ANSWERS EVALUATED and returned are \n", pretty_print_text($ansresults)  if ($DEBUG);
+#     ############################################################
+#     eval {
+#     $server->runImageGenerator();
+#     $server->runImageGeneratorAnswers();
+#     };
+#     warn "errors from renderProblemAndCheck image generator $@ " if $@;
+#     warn "entering renderandcheck buildProblemResponse";
+#     my $problemresponse = $server->buildProblemResponse();
+#     warn "renderProblemAndCheck done with build problem response\n\n";
+#     $server->clean();
+#     $server->cleanServer();
+#     my $response = {};
+#     $response->{problem} = $problemresponse;
+#     $response->{answers} = $ansresults;
+#     warn "\n\n end renderProblemAndCheck \n\n";
+#     return $response;
+# }
+# 
+# =pod
+# =begin WSDL
+# _IN request $OpaqueServer::PDFRequest
+# _RETURN $string
+# =end WSDL
+# =cut
+# sub generatePDF {
+#     my($self,$request) = @_;
+#     my $server = $ProblemServer::theServer;
+# 
+#     #Only type of output is images
+# 
+#     my $tmppath = $server->{serverEnviron}{tmp};
+#     my $texpath = "$tmppath/hardcopy.tex";
+# 
+#     my $file_handle = open my $FH, ">", $texpath;
+#     close $FH;
+# 
+# 
+#     foreach(@{$request->{problems}}) {
+#         my $problem = $_;
+# 	my $code = $problem->{code};
+# 	my $env = $problem->{env};
+# 	my $seed = $problem->{seed};
+# 	$server->setupTranslator();
+# 	$self->{problemEnviron}{displayMode} 	= "TeX";
+# 	$self->{problemEnviron}{languageMode}   = $self->{problemEnviron}{displayMode};
+# 	$self->{problemEnviron}{outputMode}	= $self->{problemEnviron}{displayMode};
+#     $server->setupImageGenerator();
+# 	$server->runTranslator($code,$env);
+#         my $problemResponse = $server->buildProblemResponse();
+#         $server->runImageGenerator();
+# 	$server->clean();
+# 	$server->cleanServer();
+#     }
+# 
+#     return "done";
+# }
+# 
+# 
+# =pod
+# =begin WSDL
+# _IN request $OpaqueServer::ProblemRequest
+# _IN answers @OpaqueServer::AnswerRequest
+# _RETURN     @OpaqueServer::AnswerResponse
+# =end WSDL
+# =cut
+# sub checkAnswers {
+#     my ($self,$request,$answers) = @_;
+#     my $server = $OpaqueServer::theServer;
+# 
+#     $server->runTranslator($request->{code},$request->{seed});
+#     my $result = $server->runChecker($answers);
+#     $server->runImageGeneratorAnswers();
+# 
+#     $server->clean();
+#     return $result;
+# }
+# sub handler {
+# 	warn "OpaqueServer handler called with @_";
+# 
+# }
 =pod
 =begin WSDL
-_IN request $OpaqueServer::ProblemRequest The Problem Request
-_RETURN $OpaqueServer::ProblemResponse The Problem Response
-=end WSDL
-=cut
-sub renderProblem {
-    my ($self,$request) = @_;
-    warn "\n\nentering renderProblem with new request \n";
-    $request->{env}->{displayMode} = translateDisplayModeNames($request->{env}->{displayMode});
-    #warn " \n\n displayMode is ", $request->{env}->{displayMode};
-    my $server = $ProblemServer::theServer;
-    $server->setupTranslator();
-    $server->setupImageGenerator();
-    #warn "run translator ".decode_base64($request->{code});
-    $server->runTranslator($request->{code},$request->{env});
-    warn "done with translator run image generator";
-    eval{ $server->runImageGenerator();};
-    warn "Errors from image generator $@ " if $@;
-    warn "done with image generator run buildProblem response";
-
-    my $response = $server->buildProblemResponse();
-    #warn "done with buildProblemResponse";
-    warn "________________\n";
-    warn " body text  from render is". decode_base64( $response->{output} );
-    warn "_______________\n";
-    $server->clean();
-    $server->cleanServer();
-    warn "complete response is ", join (" ", keys %$response);
-    return $response;
-}
-
-=pod
-=begin WSDL
-_IN requests @OpaqueServer::ProblemRequest The Problem Requests
-_RETURN @OpaqueServer::ProblemResponse The Problem Response
-=end WSDL
-=cut
-sub renderProblemAndCheck {
-    my ($self,$request,$answers) = @_;
-    warn "\n\nentering renderProblemandCheck with request \n";
-    warn "ANSWERS SUBMITTED are\n ", pretty_print_text($answers) ;
-    @$answers =  grep { decode_base64($_->{field}) =~/^0AnS/} @$answers;
-    warn "ANSWERS SUBMITTED FILTERED are\n ", join(" ", map {decode_base64($_->{field})."=>".decode_base64($_->{answer})} @$answers);
-    $request->{env}->{displayMode} = translateDisplayModeNames($request->{env}->{displayMode});
-    
-    my $server = $ProblemServer::theServer;
-    $server->setupTranslator();
-    eval {
-    $server->setupImageGenerator();
-    };
-    warn "renderProblemAndCheck: errors in image generator $@" if $@;
-    warn "renderProblemAndCheck running translator";
-    $server->runTranslator($request->{code},$request->{env});
-    ###############################################################
-    warn "run answer checker";
-    my $ansresults = $server->runChecker($answers);
-    warn "done with answer checker";
-    warn "ANSWERS EVALUATED and returned are \n", pretty_print_text($ansresults)  if ($DEBUG);
-    ############################################################
-    eval {
-    $server->runImageGenerator();
-    $server->runImageGeneratorAnswers();
-    };
-    warn "errors from renderProblemAndCheck image generator $@ " if $@;
-    warn "entering renderandcheck buildProblemResponse";
-    my $problemresponse = $server->buildProblemResponse();
-    warn "renderProblemAndCheck done with build problem response\n\n";
-    $server->clean();
-    $server->cleanServer();
-    my $response = {};
-    $response->{problem} = $problemresponse;
-    $response->{answers} = $ansresults;
-    warn "\n\n end renderProblemAndCheck \n\n";
-    return $response;
-}
-
-=pod
-=begin WSDL
-_IN request $OpaqueServer::PDFRequest
-_RETURN $string
-=end WSDL
-=cut
-sub generatePDF {
-    my($self,$request) = @_;
-    my $server = $ProblemServer::theServer;
-
-    #Only type of output is images
-
-    my $tmppath = $server->{serverEnviron}{tmp};
-    my $texpath = "$tmppath/hardcopy.tex";
-
-    my $file_handle = open my $FH, ">", $texpath;
-    close $FH;
-
-
-    foreach(@{$request->{problems}}) {
-        my $problem = $_;
-	my $code = $problem->{code};
-	my $env = $problem->{env};
-	my $seed = $problem->{seed};
-	$server->setupTranslator();
-	$self->{problemEnviron}{displayMode} 	= "TeX";
-	$self->{problemEnviron}{languageMode}   = $self->{problemEnviron}{displayMode};
-	$self->{problemEnviron}{outputMode}	= $self->{problemEnviron}{displayMode};
-    $server->setupImageGenerator();
-	$server->runTranslator($code,$env);
-        my $problemResponse = $server->buildProblemResponse();
-        $server->runImageGenerator();
-	$server->clean();
-	$server->cleanServer();
-    }
-
-    return "done";
-}
-
-
-=pod
-=begin WSDL
-_IN request $OpaqueServer::ProblemRequest
-_IN answers @OpaqueServer::AnswerRequest
-_RETURN @OpaqueServer::AnswerResponse
-=end WSDL
-=cut
-sub checkAnswers {
-    my ($self,$request,$answers) = @_;
-    my $server = $OpaqueServer::theServer;
-
-    $server->runTranslator($request->{code},$request->{seed});
-    my $result = $server->runChecker($answers);
-    $server->runImageGeneratorAnswers();
-
-    $server->clean();
-    return $result;
-}
-sub handler {
-	warn "OpaqueServer handler called with @_";
-
-}
-=pod
-=begin WSDL
-_IN request $getEngineInfoRequest
-_RETURN $getEngineInfoResponse
+_IN request $string
+_RETURN     $string
 =end WSDL
 =cut
 
 sub getEngineInfo {
 		my @in = @_;
-        warn "running getEngineInfo";
+        warn "in getEngineInfo";
         return '<engineinfo>
                      <Name>Test Opaqueserver engine</Name>
                      <PHPVersion>' . 'php5.5' . '</PHPVersion>
@@ -568,4 +573,220 @@ sub getEngineInfo {
 }
 
 
+=pod
+=begin WSDL
+_IN questionID       $string
+_IN questionVersion  $string
+_IN questionBaseUrl  $string
+_FAULT               OpaqueServer::Exception
+_RETURN     		 $string 
+=end WSDL
+=cut
+
+sub getQuestionMetadata {
+	my ($remoteid, $remoteversion, $questionbaseurl) = @_;
+	warn "in getQuestionMetadata";
+	handle_special_from_questionid($remoteid, $remoteversion, 'metadata');
+     return '<questionmetadata>
+                     <scoring><marks>' . 10 . '</marks></scoring>
+                     <plainmode>no</plainmode>
+             </questionmetadata>';
+}
+
+=pod
+=begin WSDL
+_IN questionID       $string
+_IN questionVersion  $string
+_IN questionBaseUrl  $string
+_IN paramNames       @string 
+_IN paramValues      @string
+_IN cachedResources  @string
+_FAULT               OpaqueServer::Exception 
+_RETURN              $OpaqueServer::StartReturn
+=end WSDL
+=cut
+
+sub start {
+
+	my ($questionid, $questionversion, $url, $paramNames, $paramValues,$cachedResources) = @_;
+	warn "in start paramNames = ".ref($paramNames)."  paramValues = ".ref($paramValues);
+	handle_special_from_questionid($questionid, $questionversion, 'start');
+    # zip params into hash
+		my $initparams = {};
+		my @paramValues = (ref($paramValues)=~/array/i)? @$paramValues:();
+		my @paramNames  = (ref($paramNames)=~/array/i)? @$paramNames:();
+		foreach my $key (@paramNames) {
+			$initparams->{$key}= pop @paramValues;
+		}
+	# create startReturn type and fill it
+		my $return = OpaqueServer::StartReturn->new();
+        $return->{questionID} = $questionid;
+        $return->{questionversion} = $questionversion;
+		$return->{XHTML} = get_html();
+		$return->{CSS} = get_css();
+		$return->{progressInfo} = "Try 1";
+		
+	# load resources urls
+		$return->{resources} =['no resources yet'];
+	# return start type
+	return $return;
+}
+#     
+#    function start($questionid, $questionversion, $url, $paramNames, $paramValues, $cachedResources) {
+#         global $CFG;
+# 
+#         $this->handle_special_from_questionid($questionid, $questionversion, 'start');
+# 
+#         $initparams = array_combine($paramNames, $paramValues);
+# 
+#         $return = new local_testopaqueqe_start_return($questionid, $questionversion,
+#                 !empty($initparams['display_readonly']));
+# 
+#         $return->XHTML = $this->get_html($return->questionSession, 1, $initparams);
+#         $return->CSS = $this->get_css();
+#         $return->progressInfo = "Try 1";
+#         $return->addResource(local_testopaqueqe_resource::make_from_file(
+#                 $CFG->dirroot . '/local/testopaqueqe/pix/world.gif', 'world.gif', 'image/gif'));
+# 
+#         return $return;
+#     }
+
+=pod
+=begin WSDL
+_IN questionSession  $string
+_IN names    @string
+_IN values   @string 
+_FAULT               OpaqueServer::Exception
+_RETURN              $OpaqueServer::ProcessReturn
+=end WSDL
+=cut
+
+sub process {
+	my ($questionSession, $names, $values) = @_;
+    warn "in process";
+    # zip params into hash
+		my $params = {};
+		my @values = @$values;
+		foreach my $key (@$names) {
+			$params->{$key}= pop @values;
+		}
+	handle_special_from_process($params);
+	
+	
+	my $return = OpaqueServer::ProcessReturn->new();
+}
+
+=pod
+=begin WSDL
+_IN questionSession  $string
+_FAULT               OpaqueServer::Exception
+=end WSDL
+=cut
+
+sub stop {
+	my $questionSession = shift;
+	warn "in stop";
+	handle_special_from_sessionid($questionSession, 'stop');
+}
+
+###########################################
+# Utility functions
+###########################################
+
+sub handle_special_from_sessionid {
+	my ($questionsession, $action) = @_;
+}
+
+sub handle_special_from_questionid {
+	my ($questionid, $questionversion, $action) = @_;
+}
+
+sub handle_special_from_process {
+
+}
+sub get_html {
+	my ($sessionid, $try, $submitteddata) = @_;
+	my $disabled = '';
+	if (substr($sessionid, 0, 3) eq 'ro-') {
+		$disabled = 'disabled="disabled" ';
+	}
+
+	my $hiddendata = {
+		'try' => $try,
+	};
+
+    my $output = '
+<div class="local_testopaqueqe">
+<h2><span>Hello <img src="%%RESOURCES%%/world.gif" alt="world" />!</span></h2>
+<p>This is the WeBWorK test Opaque engine  '  .
+    $sessionid . ' on try ' . $try . '</p>';
+
+	foreach my $name ($hiddendata)  {
+		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
+				'" value="' . htmlspecialchars($hiddendata->{$name}) . '" />' . "\n";
+	}
+
+        $output .= '
+        <h3>Actions</h3>
+<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $disabled . '/> or
+    <input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $disabled . '/>
+    (with a delay of <input type="text" name="%%IDPREFIX%%slow" value="0.0" size="3" ' .
+            $disabled . '/> seconds during processing).
+    If finishing assign a mark of <input type="text" name="%%IDPREFIX%%mark" value="' .
+            10 . '.00" size="3" ' . $disabled . '/>.</p>
+<p><input type="submit" name="%%IDPREFIX%%fail" value="Throw a SOAP fault" ' . $disabled . '/></p>
+<h3>Submitted data</h3>
+<table>
+<thead>
+<tr><th>Name</th><th>Value</th></tr>
+</thead>
+<tbody>';
+
+	foreach my $name ($submitteddata)  {
+		$output .= '<tr><th>' . $name . '</td><td>' . 
+		htmlspecialchars($submitteddata->{$name}) . "</th></tr>\n";
+	}
+
+    $output .= '
+</tbody>
+</table>
+</div>';
+
+        return $output;
+    
+}
+sub get_css {
+    return '
+.que.opaque .formulation .local_testopaqueqe {
+    border-radius: 5px 5px 5px 5px;
+    background: #E4F1FA;
+    padding: 0.5em;
+
+}
+.local_testopaqueqe h2 {
+    margin: 0 0 10px;
+}
+.local_testopaqueqe h2 span {
+    background: black;
+    border-radius: 5px 5px 5px 5px;
+    padding: 0 10px;
+    line-height: 60px;
+    font-size: 50px;
+    font-weight: bold;
+    color: #CCBB88;
+}
+.local_testopaqueqe h2 span img {
+    vertical-align: bottom;
+}
+.local_testopaqueqe table th {
+    text-align: left;
+    padding: 0 0.5em 0 0;
+}
+.local_testopaqueqe table td {
+    padding: 0 0.5em 0 0;
+}';
+}
+sub htmlspecialchars {
+	return shift;
+}
 1;

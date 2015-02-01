@@ -1,0 +1,97 @@
+################################################################################
+# WeBWorK Online Homework Delivery System
+# Copyright © 2000-2006 The WeBWorK Project, http://openwebwork.sf.net/
+# $CVSHeader: ww_question_server/bin/setup/problemserver.apache-config.base,v 1.2 2007/08/29 04:31:58 mleventi Exp $
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of either: (a) the GNU General Public License as published by the
+# Free Software Foundation; either version 2, or (at your option) any later
+# version, or (b) the "Artistic License" which comes with this package.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See either the GNU General Public License or the
+# Artistic License for more details.
+################################################################################
+
+ScriptAlias  /opaque_wsdl/opaque.pl /Volumes/WW_test/opt/webwork/ww_opaque_server/htdocs/opaque.pl
+
+<Perl>
+
+#######################################################
+#CONFIGURATION
+#######################################################
+
+#Define the OpaqueServer static variables
+my $hostname = 'http://localhost';
+my $root_dir = '/Volumes/WW_test/opt/webwork/ww_opaque_server';
+my $root_pg_dir = '/Volumes/WW_test/opt/webwork/pg';
+my $root_webwork2_dir = '/Volumes/WW_test/opt/webwork/webwork2';
+
+my $rpc_url = '/opaqueserver_rpc';
+my $files_url = '/opaqueserver_files';
+my $wsdl_url = 'http://localhost/opaqueserver_files/opaque.wsdl';
+
+
+#Include the problemserver libraries
+eval "use lib '$root_dir/lib'"; die $@ if $@;
+eval "use lib '$root_pg_dir/lib'"; die $@ if $@;
+eval "use lib '$root_webwork2_dir/lib'"; die $@ if $@;
+
+#Load the Module
+push @PerlModule, 'OpaqueServer';
+
+$OpaqueServer::Host = $hostname;
+$OpaqueServer::RootDir = $root_dir;
+$OpaqueServer::RootPGDir = $root_pg_dir;
+$OpaqueServer::RootWebwork2Dir = $root_webwork2_dir;
+$OpaqueServer::RPCURL = $rpc_url;
+$OpaqueServer::FilesURL = $files_url;
+
+#Alias the Directory
+my $htdocs_dir = "$root_dir/htdocs";
+push @Alias, ["$files_url","$htdocs_dir"];
+
+$Directory{"$htdocs_dir"} = {
+    Allow               => 'from all',
+    AllowOverride       => 'All',
+    Order               => 'allow,deny'
+};
+
+#PROBLEMSERVER SOAP CONFIGURATION
+# $Location{"$rpc_url"} = {
+#     SetHandler      => 'perl-script',
+#     PerlSetVar      => 'dispatch_to "OpaqueServer"',
+# 	PerlHandler     => 'Apache::SOAP',
+# 	
+# 	Order           => 'allow,deny',
+# 	Allow           => 'from all'
+# 	
+# };
+        
+print "OpaqueServer:Host $hostname\n";
+print "OpaqueServer::RootDir = $root_dir\n";
+print "OpaqueServer::RootPGDir = $root_pg_dir\n";
+print "OpaqueServer::RPCurl = $rpc_url\n";
+print "OpaqueServer::FilesURL = $files_url\n";
+print "OpaqueServer WSDL url = $wsdl_url\n";
+</Perl>
+
+PerlModule OpaqueServer;
+ <Location /opaqueserver_rpc>
+ 	PerlHandler Apache::SOAP
+    SetHandler perl-script
+    PerlSetVar dispatch_to "OpaqueServer"
+    PerlSetVar options "compress_threshold => 10000"
+    Order Allow,Deny
+    Allow from All
+ </Location>
+ 
+ <Location /opaqueserver_wsdl>
+ 	PerlHandler OpaqueServer::WSDL
+    SetHandler perl-script
+    PerlSetVar dispatch_to "OpaqueServer::WSDL"
+    PerlSetVar options "compress_threshold => 10000"
+    Order Allow,Deny
+    Allow from All
+ </Location>

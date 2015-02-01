@@ -9,7 +9,7 @@ sub handler($) {
 
     my $pod = new Pod::WSDL(
         source => 'OpaqueServer',
-        location => $ENV{PROBLEMSERVER_HOST}.$ENV{PROBLEMSERVER_RPC},
+        location => "http://localhost/opaqueserver_rpc", #$ENV{OPAQUESERVER_HOST}.$ENV{OPAQUESERVER_RPC},
         pretty => 1,
         withDocumentation => 0
         );
