@@ -14,7 +14,7 @@
 # Artistic License for more details.
 ################################################################################
 
-ScriptAlias  /opaque_wsdl/opaque.pl /Volumes/WW_test/opt/webwork/ww_opaque_server/htdocs/opaque.pl
+#ScriptAlias  /opaque_wsdl/opaque.pl /Volumes/WW_test/opt/webwork/ww_opaque_server/htdocs/opaque.pl
 
 <Perl>
 
@@ -25,7 +25,7 @@ ScriptAlias  /opaque_wsdl/opaque.pl /Volumes/WW_test/opt/webwork/ww_opaque_serve
 #Define the OpaqueServer static variables
 my $hostname = 'http://localhost';
 my $root_dir = '/opt/webwork/ww_opaque_server';
-my $root_pg_dir = /opt/webwork/pg';
+my $root_pg_dir = '/opt/webwork/pg';
 my $root_webwork2_dir = '/opt/webwork/webwork2';
 
 my $rpc_url = '/opaqueserver_rpc';
