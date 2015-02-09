@@ -37,6 +37,7 @@ use OpaqueServer::ProcessReturn;
 use WeBWorK::PG::Translator;
 use WeBWorK::PG::ImageGenerator;
 
+use Memory::Usage;
 
 
 use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
@@ -53,6 +54,7 @@ use constant DISPLAY_MODES => {
 	LaTeXMathML   => "HTML_LaTeXMathML",
 };
 our $DEBUG=0;
+our $memory_usage = Memory::Usage->new();
 
 sub new {
     my $self = shift;
@@ -62,11 +64,11 @@ sub new {
 
     #Warnings are passed into self
 
-
     #Construct the Server Environment
     my $serverEnviron = new OpaqueServer::Environment($ENV{OPAQUESERVER_ROOT});
     #FIXME Hacks
     warn "starting OpaqueServer in new";
+    
     #$SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
     #Keep the Default Server Environment
