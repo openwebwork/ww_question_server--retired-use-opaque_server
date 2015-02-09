@@ -557,18 +557,19 @@ sub hello {
 # }
 =pod
 =begin WSDL
-_IN request $string
-_RETURN     $string
+_RETURN     $string    the response below
 =end WSDL
 =cut
 
 sub getEngineInfo {
 		my @in = @_;
-        warn "in getEngineInfo";
+        warn "in getEngineInfo with ", @_;
+        my $php_version = `php -v`;
+        $php_version =~ /^.*$/;
         return '<engineinfo>
                      <Name>Test Opaqueserver engine</Name>
-                     <PHPVersion>' . 'php5.5' . '</PHPVersion>
-                     <MemoryUsage>' . '3456' . '</MemoryUsage>
+                     <PHPVersion>' . $php_version . '</PHPVersion>
+                     <MemoryUsage>' . $memory_usage->report() . '</MemoryUsage>
                      <ActiveSessions>' . 0 . '</ActiveSessions>
                      <working>Yes</working>
                  </engineinfo>';

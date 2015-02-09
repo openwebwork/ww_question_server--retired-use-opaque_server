@@ -24,9 +24,9 @@ ScriptAlias  /opaque_wsdl/opaque.pl /Volumes/WW_test/opt/webwork/ww_opaque_serve
 
 #Define the OpaqueServer static variables
 my $hostname = 'http://localhost';
-my $root_dir = '/Volumes/WW_test/opt/webwork/ww_opaque_server';
-my $root_pg_dir = '/Volumes/WW_test/opt/webwork/pg';
-my $root_webwork2_dir = '/Volumes/WW_test/opt/webwork/webwork2';
+my $root_dir = '/opt/webwork/ww_opaque_server';
+my $root_pg_dir = /opt/webwork/pg';
+my $root_webwork2_dir = '/opt/webwork/webwork2';
 
 my $rpc_url = '/opaqueserver_rpc';
 my $files_url = '/opaqueserver_files';
