@@ -598,35 +598,47 @@ sub getQuestionMetadata {
 
 =pod
 =begin WSDL
-_IN questionID       $string
-_IN questionVersion  $string
-_IN questionBaseUrl  $string
-_IN paramNames       @string 
-_IN paramValues      @string
-_IN cachedResources  @string
+_IN questionID              $string  questionID
+_IN questionVersion         $string  questionVersion
+_IN questionBaseUrl         $string  questionBaseUrl
+_IN initialParamNames       @string  paramNames
+_IN initialParamValues      @string  paramValues
+_IN cachedResources         @string cachedResources
 _FAULT               OpaqueServer::Exception 
 _RETURN              $OpaqueServer::StartReturn
 =end WSDL
 =cut
 
 sub start {
-
-	my ($questionid, $questionversion, $url, $paramNames, $paramValues,$cachedResources) = @_;
-	warn "in start paramNames = ".ref($paramNames)."  paramValues = ".ref($paramValues);
-	handle_special_from_questionid($questionid, $questionversion, 'start');
+    my $self = shift;
+	my ($questionid, $questionversion, $url, $initialParamNames, $initialParamValues,$cachedResources) = @_;
+	# warn "in start paramNames = ".ref($initialParamNames)."  paramValues = ".ref($initialParamNames)."\n\n";
+	#my @in = @_;
+	#warn  map {ref($_).":"."$_\n" }  @in;
+	my $paramNames = ref($initialParamNames)? $initialParamNames:[];
+	my $paramValues = ref($initialParamValues)? $initialParamValues:[];
+	# warn "\nparamNames ".join(" ", @$paramNames). " paramValues = ".join(" ", @$paramValues)."\n\n";
+	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
     # zip params into hash
 		my $initparams = {};
+		my $length = (@$paramNames<@$paramValues)?@$paramValues:@$paramNames;
 		my @paramValues = (ref($paramValues)=~/array/i)? @$paramValues:();
 		my @paramNames  = (ref($paramNames)=~/array/i)? @$paramNames:();
-		foreach my $key (@paramNames) {
-			$initparams->{$key}= pop @paramValues;
+		foreach my $i (1..$length) {
+		    my $key = (pop @$paramNames)//$i;
+			$initparams->{$key}= pop @$paramValues;
 		}
+		my $str = "";
+		for my $key (keys %$initparams) {
+			$str .= "$key => ".$initparams->{$key}. ", \n";
+		}
+		warn "\n\ninitparams $str\n\n";
 	# create startReturn type and fill it
 		my $return = OpaqueServer::StartReturn->new();
         $return->{questionID} = $questionid;
         $return->{questionversion} = $questionversion;
-		$return->{XHTML} = get_html();
-		$return->{CSS} = get_css();
+		$return->{XHTML} = $self->get_html();
+		$return->{CSS} = $self->get_css();
 		$return->{progressInfo} = "Try 1";
 		
 	# load resources urls
@@ -665,6 +677,7 @@ _RETURN              $OpaqueServer::ProcessReturn
 =cut
 
 sub process {
+	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
     warn "in process";
     # zip params into hash
@@ -687,6 +700,7 @@ _FAULT               OpaqueServer::Exception
 =cut
 
 sub stop {
+	my $self = shift;
 	my $questionSession = shift;
 	warn "in stop";
 	handle_special_from_sessionid($questionSession, 'stop');
@@ -697,17 +711,20 @@ sub stop {
 ###########################################
 
 sub handle_special_from_sessionid {
+	my $self = shift;
 	my ($questionsession, $action) = @_;
 }
 
 sub handle_special_from_questionid {
+	my $self = shift;
 	my ($questionid, $questionversion, $action) = @_;
 }
 
 sub handle_special_from_process {
-
+    my $self = shift;
 }
 sub get_html {
+	my $self = shift;
 	my ($sessionid, $try, $submitteddata) = @_;
 	my $disabled = '';
 	if (substr($sessionid, 0, 3) eq 'ro-') {
@@ -721,8 +738,8 @@ sub get_html {
     my $output = '
 <div class="local_testopaqueqe">
 <h2><span>Hello <img src="%%RESOURCES%%/world.gif" alt="world" />!</span></h2>
-<p>This is the WeBWorK test Opaque engine  '  .
-    $sessionid . ' on try ' . $try . '</p>';
+<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
+    $sessionid . ' with question attempt ' . $try . '</p>';
 
 	foreach my $name ($hiddendata)  {
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
@@ -759,6 +776,7 @@ sub get_html {
     
 }
 sub get_css {
+	my $self = shift;
     return '
 .que.opaque .formulation .local_testopaqueqe {
     border-radius: 5px 5px 5px 5px;
