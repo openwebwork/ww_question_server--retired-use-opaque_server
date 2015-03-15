@@ -35,6 +35,9 @@ use OpaqueServer::StartReturn;
 use OpaqueServer::ProcessReturn;
 
 use OpaqueServer::Resource;
+use OpaqueServer::Exception;
+use OpaqueServer::Results;
+use OpaqueServer::Score;
 
 use WeBWorK::PG::Translator;
 use WeBWorK::PG::ImageGenerator;
@@ -55,6 +58,9 @@ use constant DISPLAY_MODES => {
 	asciimath     => "HTML_asciimath",
 	LaTeXMathML   => "HTML_LaTeXMathML",
 };
+
+use constant MAX_MARK => 3;
+
 our $DEBUG=0;
 our $memory_usage = Memory::Usage->new();
 
@@ -557,6 +563,11 @@ sub hello {
 # 	warn "OpaqueServer handler called with @_";
 # 
 # }
+
+
+#      * A dummy implementation of the getEngineInfo method.
+#      * @return string of XML.
+
 =pod
 =begin WSDL
 _RETURN     $string    the response below
@@ -577,6 +588,13 @@ sub getEngineInfo {
                  </engineinfo>';
 }
 
+# 
+#      * A dummy implementation of the getQuestionMetadata method.
+#      * @param string $remoteid the question id
+#      * @param string $remoteversion the question version
+#      * @param string $questionbaseurl not used
+#      * @return string in xml format
+
 
 =pod
 =begin WSDL
@@ -589,14 +607,28 @@ _RETURN     		 $string
 =cut
 
 sub getQuestionMetadata {
+	my $self = shift;
 	my ($remoteid, $remoteversion, $questionbaseurl) = @_;
 	warn "in getQuestionMetadata";
-	handle_special_from_questionid($remoteid, $remoteversion, 'metadata');
+	$self->handle_special_from_questionid($remoteid, $remoteversion, 'metadata');
      return '<questionmetadata>
-                     <scoring><marks>' . 10 . '</marks></scoring>
+                     <scoring><marks>' . MAX_MARK . '</marks></scoring>
                      <plainmode>no</plainmode>
              </questionmetadata>';
 }
+
+
+
+# 
+#      * A dummy implementation of the start method.
+#      *
+#      * @param string $questionid question id.
+#      * @param string $questionversion question version.
+#      * @param string $url not used.
+#      * @param array $paramNames initialParams names.
+#      * @param array $paramValues initialParams values.
+#      * @param array $cachedResources not used.
+#      * @return local_testopaqueqe_start_return see class documentation.
 
 =pod
 =begin WSDL
@@ -665,51 +697,99 @@ sub array_combine {       #duplicates a php function -- not a method
 		}
 		return $combinedHash;
 }
-#     
-#    function start($questionid, $questionversion, $url, $paramNames, $paramValues, $cachedResources) {
-#         global $CFG;
+
 # 
-#         $this->handle_special_from_questionid($questionid, $questionversion, 'start');
-# 
-#         $initparams = array_combine($paramNames, $paramValues);
-# 
-#         $return = new local_testopaqueqe_start_return($questionid, $questionversion,
-#                 !empty($initparams['display_readonly']));
-# 
-#         $return->XHTML = $this->get_html($return->questionSession, 1, $initparams);
-#         $return->CSS = $this->get_css();
-#         $return->progressInfo = "Try 1";
-#         $return->addResource(local_testopaqueqe_resource::make_from_file(
-#                 $CFG->dirroot . '/local/testopaqueqe/pix/world.gif', 'world.gif', 'image/gif'));
-# 
-#         return $return;
-#     }
+#      * returns an object (the structure of the object is taken from an OpenMark question)
+#      *
+#      * @param $startresultquestionSession
+#      * @param $keys
+#      * @param $values
+#      * @return object
 
 =pod
 =begin WSDL
-_IN questionSession  $string
-_IN names    @string
-_IN values   @string 
-_FAULT               OpaqueServer::Exception
-_RETURN              $OpaqueServer::ProcessReturn
+_IN      questionSession  $string
+_IN      names            @string
+_IN      values           @string 
+_FAULT       OpaqueServer::Exception
+_RETURN      $OpaqueServer::ProcessReturn
 =end WSDL
 =cut
 
 sub process {
 	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
-    warn "in process";
+    warn "in process with session:  $questionSession";
+    warn "mystery hash names  ", join(" ", @$names);
     # zip params into hash
-		my $params = {};
-		my @values = @$values;
-		foreach my $key (@$names) {
-			$params->{$key}= pop @values;
+	my $params = array_combine($names, $values);
+	
+	############### report
+		my $str = "";
+		for my $key (keys %$params) {
+			$str .= "$key => ".$params->{$key}. ", \n";
 		}
-	handle_special_from_process($params);
-	
-	
+		warn "\n\nparams ".ref($params)." $str\n\n";
+############### end report
+    $self->handle_special_from_process($params);
+	# initialize the attempt number
+	my $try = $params->{try}//-666;
+	# bump the attempt number if this is a submission
+	$try++ if defined $params->{submit};
+	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
+	$return->{XHTML} = $self->get_html($questionSession, $try, $params);
+	$return->{progressInfo} = 'Try ' . $try;
+	$return->addResource( 
+		OpaqueServer::Resource->make_from_file(
+                "$OpaqueServer::RootDir/pix/world.gif", 
+                'world.gif', 
+                'image/gif'
+        )
+    );
+     if (defined($params->{finish}) ) {
+            $return->{questionEnd} = 'true';
+            $return->{results} = OpaqueServer::Results->new();
+            $return->{results}->{questionLine} = 'Test Opaque question.';
+            $return->{results}->{answerLine} = 'Finished on demand.';
+            $return->{results}->{actionSummary} = 'Finished on demand after ' 
+                 . ($params->{'try'} - 1) . ' submits.';
+
+            my $mark = $params->{'mark'};
+            #FIXME -- refactor the construction of the score
+            my $score;
+            if ($mark >= MAX_MARK()) {
+                $return->{results}->{attempts} = $params->{try};
+                #push scores
+                $score = OpaqueServer::Score->new(MAX_MARK());
+                push @{$return->{results}->{scores}}, $score;
+             } elsif ($mark <= 0) {
+                $return->{results}->{attempts} = -1;
+                $score = OpaqueServer::Score->new(0);
+                push @{$return->{results}->{scores}}, $score;
+            } else {
+                $return->{results}->{attempts} = -2;
+                $score = OpaqueServer::Score->new($mark);
+                push @{$return->{results}->{scores}}, $score;
+            }
+        }
+
+        if (defined($params->{'-finish'})) {
+            $return->{questionEnd} = 'true';
+            $return->{results} = OpaqueServer::Results->new();
+            $return->{results}->{questionLine} = 'Test Opaque question.';
+            $return->{results}->{answerLine} = 'Finished by Submit all and finish.';
+            $return->{results}->{actionSummary} = 'Finished by Submit all and finish. Treating as a pass.';
+            $return->{results}->{attempts} = 0;
+        }
+
+	$return;
 }
+
+# 
+#      * A dummy implementation of the stop method.
+#      * @param $questionsession the question session id.
+# 
 
 =pod
 =begin WSDL
@@ -721,31 +801,106 @@ _FAULT               OpaqueServer::Exception
 sub stop {
 	my $self = shift;
 	my $questionSession = shift;
-	warn "\nin stop";
-	handle_special_from_sessionid($questionSession, 'stop');
+	warn "\nin stop. session: $questionSession";
+	$self->handle_special_from_sessionid($questionSession, 'stop');
 }
 
 ###########################################
 # Utility functions
 ###########################################
 
+# 
+#      * Handles actions at the low level.
+#      * @param string $code currently 'fail' and 'slow' are recognised
+#      * @param string $delay treated as a number of seconds.
+
+sub handle_special {
+	my $self = shift;
+	my ($code,$delay) = @_;
+	
+	($code eq 'fail') && do {
+		# throw new SoapFault('1', 'Test opaque engine failing on demand.');
+		die SOAP::Fault->faultcode(1)->faultstring('Test opaque engine failing on demand.');
+	};
+	($code eq 'slow') && do {
+		# Make sure PHP does not time-out while we sleep.
+		# set_time_limit($delay + 10);
+		my $timeout = $delay + 10;   #seconds
+		my ($buffer, $size, $nread);
+		eval {  #pulled off web
+			local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
+			alarm $timeout;
+			$nread = sysread SOCKET, $buffer, $size;
+			alarm 0;
+    	};
+		if ($@) {
+			die unless $@ eq "alarm\n";   # propagate unexpected errors
+			# timed out
+		} else {
+			# didn't
+		}
+        sleep($delay );  # sleep for delay seconds
+	};
+	# default
+	# 		do nothing special
+
+}
+
+#      * Handle any special actions, as determined by the question session id.
+#      * @param string $sessionid which will be of the form "$questionid-$version".
+#      * @param string $method identifies the calling method.
+# 
+
 sub handle_special_from_sessionid {
 	my $self = shift;
-	my ($questionsession, $action) = @_;
+	my ($sessionid, $method) = @_;
+	if (substr($sessionid, 0, 3) eq 'ro-') {
+            $sessionid = substr($sessionid, 3);
+    }
+    my ($questionid, $version) = split('-',$sessionid, 1); 
+    $self->handle_special_from_questionid($questionid, $version, $method);
 }
+
+# 
+#      * Handle any special actions, as determined by the question id.
+#      * @param string $questionid questionid. If it start with $method., triggers special actions.
+#      * @param string $version question verion. In some cases used as a delay in seconds.
+#      * @param string $method identifies the calling method.
 
 sub handle_special_from_questionid {
 	my $self = shift;
-	my ($questionid, $questionversion, $action) = @_;
+	my ($questionid, $version, $method) = @_;
+	my $len = length($method) + 1;
+
+	unless (substr($questionid, 0, $len) ne ($method . '.')) {
+		return; # Nothing special for this method.
+	}
+
+    $self->handle_special(substr($questionid, 0, $len), $version);
 }
+
+# 
+#      * Handle any special actions, as determined by the data sumbitted with a process call.
+#      * @param array $params the POST data for this question.
 
 sub handle_special_from_process {
     my $self = shift;
+    my ($params) = @_;
+	if (defined($params->{fail}) ) {
+		$self->handle_special('fail', 0);
+	} elsif (defined($params->{slow}) && ( $params->{slow} > 0) ) {
+		$self->handle_special('slow', $params->{slow});
+	}
 }
+
+# 
+#      * Generate the HTML we will send back in reply to start/process calls.
+#      * @param array $params to display, and add as hidden form fields.
+#      * @return string HTML code.
+# 
 sub get_html {
 	my $self = shift;
 	my ($sessionid, $try, $submitteddata) = @_;
-	#warn "get_html called with sessionid $sessionid, try $try, and submitteddata $submitteddata";
 	my $disabled = '';
 	if (substr($sessionid, 0, 3) eq 'ro-') {
 		$disabled = 'disabled="disabled" ';
@@ -761,8 +916,7 @@ sub get_html {
 <p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
     $sessionid . ' with question attempt ' . $try . '</p>';
 
-	foreach my $name ($hiddendata)  {
-		next unless defined $name;
+	foreach my $name (keys %$hiddendata)  {
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
 				'" value="' . htmlspecialchars($hiddendata->{$name}//'') . '" />' . "\n";
 	}
@@ -774,7 +928,7 @@ sub get_html {
     (with a delay of <input type="text" name="%%IDPREFIX%%slow" value="0.0" size="3" ' .
             $disabled . '/> seconds during processing).
     If finishing assign a mark of <input type="text" name="%%IDPREFIX%%mark" value="' .
-            10 . '.00" size="3" ' . $disabled . '/>.</p>
+            MAX_MARK() . '.00" size="3" ' . $disabled . '/>.</p>
 <p><input type="submit" name="%%IDPREFIX%%fail" value="Throw a SOAP fault" ' . $disabled . '/></p>
 <h3>Submitted data</h3>
 <table>
@@ -796,6 +950,11 @@ sub get_html {
         return $output;
     
 }
+
+# 
+#     * Get the CSS that we use in our return values.
+#     * @return string CSS code.
+# 
 sub get_css {
 	my $self = shift;
     return '

@@ -19,8 +19,8 @@ sub new {
     $self->{answerLine}     	= "";
     $self->{actionSummary}   	= "";
     $self->{attempts}     		= ""; 
-    $self->{scores}   			= {};
-    $self->{customResults}     	= {}; 
+    $self->{scores}   			= [];
+    $self->{customResults}     	= []; 
 
     bless $self;
     return $self;

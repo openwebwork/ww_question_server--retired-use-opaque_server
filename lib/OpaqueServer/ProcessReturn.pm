@@ -7,7 +7,7 @@ package OpaqueServer::ProcessReturn;
         _ATTR progressInfo  $string  progress info    
         _ATTR questionEnd   $string   boolean
         _ATTR resources     @OpaqueServer::Resource  array
-        _ATTR results       $OpaqueServer::Results
+        _ATTR results       $OpaqueServer::Results  complex value
 
 =end WSDL
 =cut
@@ -25,4 +25,10 @@ sub new {
     return $self;
 }
 
+sub addResource(local_testopaqueqe_resource $resource) {
+	my $self = shift;
+	my ($resource) = @_;
+	warn "StartReturn::addResource: resource $resource is not of the correct type" unless ref($resource);
+	push @{$self->{resources}} , $resource;
+}
 1;
