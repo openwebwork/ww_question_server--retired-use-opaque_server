@@ -10,16 +10,27 @@ package OpaqueServer::StartReturn;
 =end WSDL
 =cut
 sub new {
-    my $self;
-    my $data;
+    my $class = shift;
+    my ($questionid, $version, $readonly)= @_;
     $self = {};
     $self->{questionSession}       	= "";
     $self->{XHTML}     				= "";
     $self->{CSS}   					= "";
     $self->{progressInfo}     		= ""; 
     $self->{resources}    			= [];
-    bless $self;
+    # initialize
+    $self->{questionSession} = $questionid . '-' . $version;
+        if ($readonly) {
+            $self->{questionSession} = 'ro-' . $self->{questionSession};
+        }
+    bless $self, $class;
     return $self;
 }
 
+sub addResource(local_testopaqueqe_resource $resource) {
+	my $self = shift;
+	my ($resource) = @_;
+	warn "StartReturn::addResource: resource $resource is not of the correct type" unless ref($resource);
+	push @{$self->{resources}} , $resource;
+}
 1;

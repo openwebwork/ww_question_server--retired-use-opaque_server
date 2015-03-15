@@ -34,6 +34,8 @@ use OpaqueServer::GeneratorResponse;
 use OpaqueServer::StartReturn;
 use OpaqueServer::ProcessReturn;
 
+use OpaqueServer::Resource;
+
 use WeBWorK::PG::Translator;
 use WeBWorK::PG::ImageGenerator;
 
@@ -620,31 +622,48 @@ sub start {
 	# warn "\nparamNames ".join(" ", @$paramNames). " paramValues = ".join(" ", @$paramValues)."\n\n";
 	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
     # zip params into hash
-		my $initparams = {};
+        my $initparams = array_combine($paramNames, $paramValues);
+		
+		
+	# create startReturn type and fill it
+		my $return = OpaqueServer::StartReturn->new($questionid, $questionversion, 
+		$initparams->{display_readonly}//0); #readonly if this value is defined and 1
+		$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
+		$return->{CSS} = $self->get_css();
+		$return->{progressInfo} = "Try 1";
+		
+		
+		my $resource = OpaqueServer::Resource->make_from_file(
+                '/Volumes/WW_test/opt/webwork/ww_opaque_server/pix/world.gif', 
+                'world.gif', 
+                'image/gif'
+        );
+        $return->addResource($resource);
+
+############### report
+		my $str = "";
+		for my $key (keys %$return) {
+			$str .= "$key => ".$return->{$key}. ", \n";
+		}
+		warn "\n\nreturn ".ref($return)." $str\n\n";
+############### end report
+
+	# return start type
+	return $return;
+}
+
+sub array_combine {       #duplicates a php function -- not a method
+        my ($paramNames, $paramValues) = @_;
+		my $combinedHash = {};
 		my $length = (@$paramNames<@$paramValues)?@$paramValues:@$paramNames;
+		return () unless $length==@$paramValues and $length==@$paramNames;
 		my @paramValues = (ref($paramValues)=~/array/i)? @$paramValues:();
 		my @paramNames  = (ref($paramNames)=~/array/i)? @$paramNames:();
 		foreach my $i (1..$length) {
 		    my $key = (pop @$paramNames)//$i;
-			$initparams->{$key}= pop @$paramValues;
+			$combinedHash->{$key}= pop @$paramValues;
 		}
-		my $str = "";
-		for my $key (keys %$initparams) {
-			$str .= "$key => ".$initparams->{$key}. ", \n";
-		}
-		warn "\n\ninitparams $str\n\n";
-	# create startReturn type and fill it
-		my $return = OpaqueServer::StartReturn->new();
-        $return->{questionID} = $questionid;
-        $return->{questionversion} = $questionversion;
-		$return->{XHTML} = $self->get_html();
-		$return->{CSS} = $self->get_css();
-		$return->{progressInfo} = "Try 1";
-		
-	# load resources urls
-		$return->{resources} =['no resources yet'];
-	# return start type
-	return $return;
+		return $combinedHash;
 }
 #     
 #    function start($questionid, $questionversion, $url, $paramNames, $paramValues, $cachedResources) {
@@ -726,6 +745,7 @@ sub handle_special_from_process {
 sub get_html {
 	my $self = shift;
 	my ($sessionid, $try, $submitteddata) = @_;
+	warn "get_html called with sessionid $sessionid, try $try, and submitteddata $submitteddata";
 	my $disabled = '';
 	if (substr($sessionid, 0, 3) eq 'ro-') {
 		$disabled = 'disabled="disabled" ';
@@ -762,7 +782,7 @@ sub get_html {
 </thead>
 <tbody>';
 
-	foreach my $name ($submitteddata)  {
+	foreach my $name (keys %$submitteddata)  {
 		$output .= '<tr><th>' . $name . '</td><td>' . 
 		htmlspecialchars($submitteddata->{$name}) . "</th></tr>\n";
 	}
