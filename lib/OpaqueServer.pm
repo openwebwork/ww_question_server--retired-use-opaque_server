@@ -672,13 +672,6 @@ sub start {
         );
         $return->addResource($resource);
 
-############### report
-# 		my $str = "";
-# 		for my $key (keys %$return) {
-# 			$str .= "$key => ".$return->{$key}. ", \n";
-# 		}
-# 		warn "\n\nreturn ".ref($return)." $str\n\n";
-############### end report
 
 	# return start type
 	return $return;
@@ -817,7 +810,7 @@ sub stop {
 sub handle_special {
 	my $self = shift;
 	my ($code,$delay) = @_;
-	
+	warn "in handle_special with code $code and delay $delay";
 	($code eq 'fail') && do {
 		# throw new SoapFault('1', 'Test opaque engine failing on demand.');
 		die SOAP::Fault->faultcode(1)->faultstring('Test opaque engine failing on demand.');
@@ -827,19 +820,21 @@ sub handle_special {
 		# set_time_limit($delay + 10);
 		my $timeout = $delay + 10;   #seconds
 		my ($buffer, $size, $nread);
+		$size =20000;
 		eval {  #pulled off web
 			local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
 			alarm $timeout;
-			$nread = sysread SOCKET, $buffer, $size;
-			alarm 0;
+			sleep($delay );  # sleep for delay seconds
+			alarm(0);
     	};
 		if ($@) {
-			die unless $@ eq "alarm\n";   # propagate unexpected errors
+			die  unless $@ eq "alarm\n";   # propagate unexpected errors
+			warn "alarm timed out";
 			# timed out
 		} else {
 			# didn't
 		}
-        sleep($delay );  # sleep for delay seconds
+        
 	};
 	# default
 	# 		do nothing special
@@ -870,13 +865,16 @@ sub handle_special_from_sessionid {
 sub handle_special_from_questionid {
 	my $self = shift;
 	my ($questionid, $version, $method) = @_;
+	warn "in handle_special_questionid with 
+	   questionid $questionid version $version method $method";
 	my $len = length($method) + 1;
 
-	unless (substr($questionid, 0, $len) ne ($method . '.')) {
+	if (substr($questionid, 0, $len) ne ($method . '.')) {
+		warn "do nothing for $questionid and method $method";
 		return; # Nothing special for this method.
 	}
-
-    $self->handle_special(substr($questionid, 0, $len), $version);
+	warn "call handle_special with ",substr($questionid,$len), " $version";
+    $self->handle_special(substr($questionid, $len), $version);
 }
 
 # 
