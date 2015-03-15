@@ -6,8 +6,8 @@ package OpaqueServer::Results;
         _ATTR answerLine           $string summary of answer        	
         _ATTR actionSummary        $string  summary of action    
         _ATTR attempts             $string   (integer)
-        _ATTR scores               @OpaqueServer::Score  
-        _ATTR customResults        @OpaqueServer::CustomResult
+        _ATTR scores               @OpaqueServer::Score  compoundObject
+        _ATTR customResults        @OpaqueServer::CustomResult compoundObject
 
 =end WSDL
 =cut

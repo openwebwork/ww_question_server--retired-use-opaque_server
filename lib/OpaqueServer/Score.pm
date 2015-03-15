@@ -3,7 +3,7 @@ package OpaqueServer::Score;
 =pod
 =begin WSDL
         _ATTR axis   $string Axis for grading if more than one
-        _ATTR marks  $string Grade        	
+        _ATTR marks  $string Grade  grade string      	
 =end WSDL
 =cut
 sub new {

@@ -634,18 +634,18 @@ sub start {
 		
 		
 		my $resource = OpaqueServer::Resource->make_from_file(
-                '/Volumes/WW_test/opt/webwork/ww_opaque_server/pix/world.gif', 
+                "$OpaqueServer::RootDir/pix/world.gif", 
                 'world.gif', 
                 'image/gif'
         );
         $return->addResource($resource);
 
 ############### report
-		my $str = "";
-		for my $key (keys %$return) {
-			$str .= "$key => ".$return->{$key}. ", \n";
-		}
-		warn "\n\nreturn ".ref($return)." $str\n\n";
+# 		my $str = "";
+# 		for my $key (keys %$return) {
+# 			$str .= "$key => ".$return->{$key}. ", \n";
+# 		}
+# 		warn "\n\nreturn ".ref($return)." $str\n\n";
 ############### end report
 
 	# return start type
@@ -721,7 +721,7 @@ _FAULT               OpaqueServer::Exception
 sub stop {
 	my $self = shift;
 	my $questionSession = shift;
-	warn "in stop";
+	warn "\nin stop";
 	handle_special_from_sessionid($questionSession, 'stop');
 }
 
@@ -745,7 +745,7 @@ sub handle_special_from_process {
 sub get_html {
 	my $self = shift;
 	my ($sessionid, $try, $submitteddata) = @_;
-	warn "get_html called with sessionid $sessionid, try $try, and submitteddata $submitteddata";
+	#warn "get_html called with sessionid $sessionid, try $try, and submitteddata $submitteddata";
 	my $disabled = '';
 	if (substr($sessionid, 0, 3) eq 'ro-') {
 		$disabled = 'disabled="disabled" ';
@@ -762,8 +762,9 @@ sub get_html {
     $sessionid . ' with question attempt ' . $try . '</p>';
 
 	foreach my $name ($hiddendata)  {
+		next unless defined $name;
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
-				'" value="' . htmlspecialchars($hiddendata->{$name}) . '" />' . "\n";
+				'" value="' . htmlspecialchars($hiddendata->{$name}//'') . '" />' . "\n";
 	}
 
         $output .= '
