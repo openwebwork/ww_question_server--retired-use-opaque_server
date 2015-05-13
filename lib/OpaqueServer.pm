@@ -713,16 +713,15 @@ sub process {
 	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
     warn "in process with session:  $questionSession";
-    warn "mystery hash names  ", join(" ", @$names);
-    # zip params into hash
+     # zip params into hash
 	my $params = array_combine($names, $values);
 	
 	############### report
-		my $str = "";
-		for my $key (keys %$params) {
-			$str .= "$key => ".$params->{$key}. ", \n";
-		}
-		warn "\n\nparams ".ref($params)." $str\n\n";
+# 		my $str = "";
+# 		for my $key (keys %$params) {
+# 			$str .= "$key => ".$params->{$key}. ", \n";
+# 		}
+# 		warn "\n\nparams ".ref($params)." $str\n\n";
 ############### end report
     $self->handle_special_from_process($params);
 	# initialize the attempt number
@@ -794,7 +793,7 @@ _FAULT               OpaqueServer::Exception
 sub stop {
 	my $self = shift;
 	my $questionSession = shift;
-	warn "\nin stop. session: $questionSession";
+	#warn "\nin stop. session: $questionSession";
 	$self->handle_special_from_sessionid($questionSession, 'stop');
 }
 
@@ -852,7 +851,13 @@ sub handle_special_from_sessionid {
 	if (substr($sessionid, 0, 3) eq 'ro-') {
             $sessionid = substr($sessionid, 3);
     }
+    warn "in handle_special_sessionid with 
+	   sessionid $sessionid version $version method $method";
+
     my ($questionid, $version) = split('-',$sessionid, 1); 
+    warn "in handle_special_sessionid with 
+	   questionid $questionid version $version method $method";
+
     $self->handle_special_from_questionid($questionid, $version, $method);
 }
 
