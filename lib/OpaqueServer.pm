@@ -851,11 +851,12 @@ sub handle_special_from_sessionid {
 	if (substr($sessionid, 0, 3) eq 'ro-') {
             $sessionid = substr($sessionid, 3);
     }
+
     warn "in handle_special_sessionid with 
-	   sessionid $sessionid version $version method $method";
+	   sessionid $sessionid  method $method";
 
     my ($questionid, $version) = split('-',$sessionid, 1); 
-    warn "in handle_special_sessionid with 
+    warn "in handle_special_sessionid after split we have  
 	   questionid $questionid version $version method $method";
 
     $self->handle_special_from_questionid($questionid, $version, $method);
