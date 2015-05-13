@@ -1,6 +1,7 @@
 package OpaqueServer::WSDL;
 
 use Pod::WSDL;
+use OpaqueServer;
 
 use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
@@ -9,7 +10,7 @@ sub handler($) {
 
     my $pod = new Pod::WSDL(
         source => 'OpaqueServer',
-        location => "http://localhost/opaqueserver_rpc", #$ENV{OPAQUESERVER_HOST}.$ENV{OPAQUESERVER_RPC},
+        location => "$OpaqueServer::Host/opaqueserver_rpc", #$ENV{OPAQUESERVER_HOST}.$ENV{OPAQUESERVER_RPC},
         pretty => 1,
         withDocumentation => 0
         );
