@@ -717,11 +717,11 @@ sub process {
 	my $params = array_combine($names, $values);
 	
 	############### report
-# 		my $str = "";
-# 		for my $key (keys %$params) {
-# 			$str .= "$key => ".$params->{$key}. ", \n";
-# 		}
-# 		warn "\n\nparams ".ref($params)." $str\n\n";
+		my $str = "";
+		for my $key (keys %$params) {
+			$str .= "$key => ".$params->{$key}. ", \n";
+		}
+		warn "\n\nParameters passed to process ".ref($params)." $str\n\n";
 ############### end report
     $self->handle_special_from_process($params);
 	# initialize the attempt number
@@ -793,7 +793,7 @@ _FAULT               OpaqueServer::Exception
 sub stop {
 	my $self = shift;
 	my $questionSession = shift;
-	#warn "\nin stop. session: $questionSession";
+	warn "\nin stop. session: $questionSession";
 	$self->handle_special_from_sessionid($questionSession, 'stop');
 }
 
