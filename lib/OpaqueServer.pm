@@ -856,6 +856,7 @@ sub handle_special_from_sessionid {
 	   sessionid $sessionid  method $method";
 
     my ($questionid, $version) = split('-',$sessionid, 1); 
+    $version = $version//'';
     warn "in handle_special_sessionid after split we have  
 	   questionid $questionid version $version method $method";
 
@@ -871,6 +872,7 @@ sub handle_special_from_sessionid {
 sub handle_special_from_questionid {
 	my $self = shift;
 	my ($questionid, $version, $method) = @_;
+	$version = $version//'';   # in case version isn't initialized.
 	warn "in handle_special_questionid with 
 	   questionid $questionid version $version method $method";
 	my $len = length($method) + 1;
