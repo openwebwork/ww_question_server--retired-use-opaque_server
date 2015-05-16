@@ -25,7 +25,7 @@ sub new {
     return $self;
 }
 
-sub addResource(local_testopaqueqe_resource $resource) {
+sub addResource {   # (local_testopaqueqe_resource $resource)
 	my $self = shift;
 	my ($resource) = @_;
 	warn "StartReturn::addResource: resource $resource is not of the correct type" unless ref($resource);

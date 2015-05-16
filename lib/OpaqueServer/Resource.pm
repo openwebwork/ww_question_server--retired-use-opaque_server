@@ -24,7 +24,7 @@ sub new {
 sub  make_from_file  {
 		my $self = shift;
 		my ($path, $name, $mimetype, $encoding ) = @_;
-		$encoding//'';		
+		$encoding = $encoding//'';		
         my $resource = $self->new();
         $resource->{encoding} = $encoding;
         $resource->{filename} = $name;
