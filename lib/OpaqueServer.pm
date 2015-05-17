@@ -953,13 +953,9 @@ sub get_html {
 </tbody>
 </table>
 </div>';
-        my $filePath = "setopaque/showInfo.pg";
-        $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
-        my $formFields = {                            #$r->param();
-			AnSwEr0001 =>'[0,1)',
-			AnSwEr0002 => 'bar',
-			AnSwEr0003 => 'foobar',
-		};
+        # my $filePath = "setopaque/showInfo.pg";
+        my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
+
         my $pg = OpaqueServer::RenderProblem::renderOpaquePGProblem($filePath, $submitteddata);
         $output .= $pg->{body_text};
         return $output;
@@ -967,10 +963,6 @@ sub get_html {
 }
 ##############################################
 require "renderOpaquePGProblem.pl";
-
-my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
-
-print "rendering file at $filePath\n";
 
 # my $pg = renderOpaquePGProblem($filePath, $formFields);
 
