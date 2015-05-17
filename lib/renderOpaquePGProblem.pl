@@ -142,8 +142,6 @@ our $db = WeBWorK::DB->new($dbLayout);
 # Run problem on a given file
 ########################################################################
 
-# my $filePath = "/Volumes/WW_test/webwork/libraries/webwork-open-problem-library/".
-                 "OpenProblemLibrary/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
 my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
 
 print "rendering file at $filePath\n";
@@ -182,7 +180,6 @@ sub renderOpaquePGProblem {
 	my $showSolutions = $args{showSolutions} || 0;
 	my $problemNumber = $args{'problem_number'} || 1;
     my $displayMode   = $ce->{pg}->{options}->{displayMode};
-    $displayMode      = "opaque_image";
     # my $key = $r->param('key');
   
 	
@@ -192,7 +189,9 @@ sub renderOpaquePGProblem {
 		showSolutions   => $showSolutions,
 		refreshMath2img => 0,
 		processAnswers  => 0,
-		QUIZ_PREFIX     => '',		
+		QUIZ_PREFIX     => '',	
+		use_site_prefix => $ce->{server_root_url},
+		use_opaque_prefix => 1,	
 	};
 	my $extras = {};   # Check what this is used for.
 	
