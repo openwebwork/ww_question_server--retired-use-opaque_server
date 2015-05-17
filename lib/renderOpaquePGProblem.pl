@@ -143,11 +143,16 @@ our $db = WeBWorK::DB->new($dbLayout);
 ########################################################################
 
 # my $filePath = "/Volumes/WW_test/webwork/libraries/webwork-open-problem-library/".
-#                 "OpenProblemLibrary/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
+                 "OpenProblemLibrary/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
 my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
 
 print "rendering file at $filePath\n";
-my $pg = renderOpaquePGProblem($filePath);
+my $formFields = {                            #$r->param();
+    	AnSwEr0001 =>'foo',
+    	AnSwEr0002 => 'bar',
+    	AnSwEr0003 => 'foobar',
+    };
+my $pg = renderOpaquePGProblem($filePath, $formFields);
 
 # print "result \n",pretty_print($pg, 'text');
 print "\n", $pg->{body_text}, "\n";
@@ -164,6 +169,7 @@ print "\n", $pg->{body_text}, "\n";
 sub renderOpaquePGProblem {
     #print "entering renderOpaquePGProblem\n\n";
     my $problemFile = shift//'';
+    my $formFields  = shift//'';
     my %args = ();
 
 
@@ -176,12 +182,9 @@ sub renderOpaquePGProblem {
 	my $showSolutions = $args{showSolutions} || 0;
 	my $problemNumber = $args{'problem_number'} || 1;
     my $displayMode   = $ce->{pg}->{options}->{displayMode};
+    $displayMode      = "opaque_image";
     # my $key = $r->param('key');
-    my $formFields = {                            #$r->param();
-    	AnSwEr0001 =>'foo',
-    	AnSwEr0002 => 'bar',
-    	AnSwEr0003 => 'foobar',
-    };
+  
 	
 	my $translationOptions = {
 		displayMode     => $displayMode,

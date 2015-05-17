@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 
-use lib qw( /Volumes/WW_test/opt/webwork/webwork2/lib /Volumes/WW_test/opt/webwork/webwork2/pg/lib /Volumes/WW_test/opt/webwork/ww_opaque_server/lib );
+use lib qw( /Volumes/WW_test/opt/webwork/webwork2/lib 
+            /Volumes/WW_test/opt/webwork/webwork2/pg/lib 
+            /Volumes/WW_test/opt/webwork/ww_opaque_server/lib 
+            );
 
 
 sub main::getEngineInfo {
@@ -73,9 +76,9 @@ sub new {
     #Warnings are passed into self
 
     #Construct the Server Environment
-    my $serverEnviron = new OpaqueServer::Environment($ENV{OPAQUESERVER_ROOT});
+    warn "Calling Opaqueserver::Environment to construct the environment in OpaqueServer::new";
+    my $serverEnviron = new OpaqueServer::Environment($OpaqueServer::RootDir);
     #FIXME Hacks
-    warn "starting OpaqueServer in new";
     
     #$SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
@@ -155,11 +158,11 @@ sub setupImageGenerator {
     $self->{imageGenerator} = $image_generator;
 }
 
-BEGIN {
-    $OpaqueServer::theServer = new OpaqueServer();
-    $OpaqueServer::theServer->setupTranslator();
-    $OpaqueServer::theServer->setupImageGenerator();
-}
+# BEGIN {
+#     $OpaqueServer::theServer = new OpaqueServer();
+#     $OpaqueServer::theServer->setupTranslator();
+#     $OpaqueServer::theServer->setupImageGenerator();
+# }
 
 sub downloadFiles {
     my ($self,$files) = @_;
@@ -610,6 +613,7 @@ sub getQuestionMetadata {
 	my $self = shift;
 	my ($remoteid, $remoteversion, $questionbaseurl) = @_;
 	warn "in getQuestionMetadata";
+	warn "\tremoteid $remoteid remoteversion $remoteversion questionbaseurl $questionbaseurl";
 	$self->handle_special_from_questionid($remoteid, $remoteversion, 'metadata');
      return '<questionmetadata>
                      <scoring><marks>' . MAX_MARK . '</marks></scoring>
@@ -646,12 +650,8 @@ _RETURN              $OpaqueServer::StartReturn
 sub start {
     my $self = shift;
 	my ($questionid, $questionversion, $url, $initialParamNames, $initialParamValues,$cachedResources) = @_;
-	# warn "in start paramNames = ".ref($initialParamNames)."  paramValues = ".ref($initialParamNames)."\n\n";
-	#my @in = @_;
-	#warn  map {ref($_).":"."$_\n" }  @in;
 	my $paramNames = ref($initialParamNames)? $initialParamNames:[];
 	my $paramValues = ref($initialParamValues)? $initialParamValues:[];
-	# warn "\nparamNames ".join(" ", @$paramNames). " paramValues = ".join(" ", @$paramValues)."\n\n";
 	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
     # zip params into hash
         my $initparams = array_combine($paramNames, $paramValues);
@@ -663,20 +663,20 @@ sub start {
 		$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 		$return->{CSS} = $self->get_css();
 		$return->{progressInfo} = "Try 1";
-		
-		
+		$return->{questionSession}="12345";
+
 		my $resource = OpaqueServer::Resource->make_from_file(
                 "$OpaqueServer::RootDir/pix/world.gif", 
                 'world.gif', 
                 'image/gif'
         );
         $return->addResource($resource);
-
-
 	# return start type
 	return $return;
 }
 
+
+########## utility subroutine -- zips two array refs into a hash ref #############
 sub array_combine {       #duplicates a php function -- not a method
         my ($paramNames, $paramValues) = @_;
 		my $combinedHash = {};
@@ -712,11 +712,11 @@ _RETURN      $OpaqueServer::ProcessReturn
 sub process {
 	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
-    warn "in process with session:  $questionSession";
+    warn "in process with questionSession:  $questionSession";
      # zip params into hash
 	my $params = array_combine($names, $values);
 	
-	############### report
+############### report input parameters
 		my $str = "";
 		for my $key (keys %$params) {
 			$str .= "$key => ".$params->{$key}. ", \n";
@@ -935,6 +935,7 @@ sub get_html {
             $disabled . '/> seconds during processing).
     If finishing assign a mark of <input type="text" name="%%IDPREFIX%%mark" value="' .
             MAX_MARK() . '.00" size="3" ' . $disabled . '/>.</p>
+    <p> <input type="text" name="%%IDPREFIX%%AnSwEr0007" value="foo">
 <p><input type="submit" name="%%IDPREFIX%%fail" value="Throw a SOAP fault" ' . $disabled . '/></p>
 <h3>Submitted data</h3>
 <table>
@@ -952,10 +953,29 @@ sub get_html {
 </tbody>
 </table>
 </div>';
-
+        my $filePath = "setopaque/showInfo.pg";
+        $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
+        my $formFields = {                            #$r->param();
+			AnSwEr0001 =>'[0,1)',
+			AnSwEr0002 => 'bar',
+			AnSwEr0003 => 'foobar',
+		};
+        my $pg = OpaqueServer::RenderProblem::renderOpaquePGProblem($filePath, $submitteddata);
+        $output .= $pg->{body_text};
         return $output;
     
 }
+##############################################
+require "renderOpaquePGProblem.pl";
+
+my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
+
+print "rendering file at $filePath\n";
+
+# my $pg = renderOpaquePGProblem($filePath, $formFields);
+
+# print "result \n",pretty_print($pg, 'text');
+# print "\n", $pg->{body_text}, "\n";
 
 # 
 #     * Get the CSS that we use in our return values.
