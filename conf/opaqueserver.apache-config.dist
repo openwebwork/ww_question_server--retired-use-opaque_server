@@ -32,6 +32,9 @@ my $rpc_url = '/opaqueserver_rpc';
 my $files_url = '/opaqueserver_files';
 my $wsdl_url = '/opaqueserver_wsdl';
 
+my $courseName = 'gage_course';
+
+#######################################################
 
 #Include the problemserver libraries
 eval "use lib '$root_dir/lib'"; die $@ if $@;
@@ -47,6 +50,8 @@ $OpaqueServer::RootPGDir = $root_pg_dir;
 $OpaqueServer::RootWebwork2Dir = $root_webwork2_dir;
 $OpaqueServer::RPCURL = $rpc_url;
 $OpaqueServer::FilesURL = $files_url;
+$OpaqueServer::WSDLURL = $wsdl_url;
+$OpaqueServer::courseName = $courseName;
 
 #Alias the Directory
 my $htdocs_dir = "$root_dir/htdocs";
