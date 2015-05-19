@@ -47,6 +47,11 @@ use WeBWorK::PG::ImageGenerator;
 
 use Memory::Usage;
 
+use PGUtil qw(pretty_print not_null);
+use WeBWorK::Utils::Tasks qw(fake_set fake_problem fake_user);   # may not be needed
+use constant fakeSetName => "Undefined_Set";
+use constant fakeUserName => "Undefined_User";
+
 
 use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
@@ -62,7 +67,7 @@ use constant DISPLAY_MODES => {
 	LaTeXMathML   => "HTML_LaTeXMathML",
 };
 
-use constant MAX_MARK => 3;
+use constant MAX_MARK => 1;
 
 our $DEBUG=0;
 our $memory_usage = Memory::Usage->new();
@@ -655,11 +660,11 @@ sub start {
 	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
     # zip params into hash
         my $initparams = array_combine($paramNames, $paramValues);
-		
+		$initparams->{questionid} = $questionid;
 		
 	# create startReturn type and fill it
-		my $return = OpaqueServer::StartReturn->new($questionid, $questionversion, 
-		$initparams->{display_readonly}//0); #readonly if this value is defined and 1
+		my $return = OpaqueServer::StartReturn->new($questionid, $questionversion,
+		    $initparams->{display_readonly}//0); #readonly if this value is defined and 1
 		$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 		$return->{CSS} = $self->get_css();
 		$return->{progressInfo} = "Try 1";
@@ -708,7 +713,7 @@ _FAULT       OpaqueServer::Exception
 _RETURN      $OpaqueServer::ProcessReturn
 =end WSDL
 =cut
-
+our $PGscore=0;
 sub process {
 	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
@@ -730,7 +735,12 @@ sub process {
 	$try++ if defined $params->{submit};
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
-	$return->{XHTML} = $self->get_html($questionSession, $try, $params);
+	if (defined($params->{questionid}) ){
+		$return->{XHTML} = $self->get_html($questionSession, $try, $params);
+		# need questionid parameter to find source filepath
+	} else {
+		$return->{XHTML}='';
+	}
 	$return->{progressInfo} = 'Try ' . $try;
 	$return->addResource( 
 		OpaqueServer::Resource->make_from_file(
@@ -747,7 +757,7 @@ sub process {
             $return->{results}->{actionSummary} = 'Finished on demand after ' 
                  . ($params->{'try'} - 1) . ' submits.';
 
-            my $mark = $params->{'mark'};
+            my $mark = $PGscore;
             #FIXME -- refactor the construction of the score
             my $score;
             if ($mark >= MAX_MARK()) {
@@ -773,6 +783,8 @@ sub process {
             $return->{results}->{answerLine} = 'Finished by Submit all and finish.';
             $return->{results}->{actionSummary} = 'Finished by Submit all and finish. Treating as a pass.';
             $return->{results}->{attempts} = 0;
+            #my $score = OpaqueServer::Score->new($PGscore);
+            #push @{$return->{results}->{scores}}, $score;
         }
 
 	$return;
@@ -914,35 +926,67 @@ sub get_html {
 
 	my $hiddendata = {
 		'try' => $try,
+		'questionid' => $submitteddata->{questionid},
+		%$submitteddata,
 	};
+	 my $filePath = $submitteddata->{questionid};
+        $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 
+        $filePath =~ s/^l/L/;    # handle the fact that id's must start with non-caps (opaque/edit_opaque_form.php)
+        #  dash - is also not normally allowed as an character in question ids 
+        #  '[_a-zA-Z][_a-zA-Z0-9\-]*';
+        my $pg = OpaqueServer::renderOpaquePGProblem($filePath, $submitteddata);
+        my @PGscore_array = map {$_->score} values %{$pg->{answers}};
+        $PGscore=0;
+        foreach my $el (@PGscore_array) {
+        	$PGscore += $el;
+        }
+        $PGscore = (@PGscore_array) ? $PGscore/@PGscore_array : 0;
+        warn "PG scores $PGscore ", join(" ", @PGscore_array);
 
     my $output = '
-<div class="local_testopaqueqe">
-<h2><span>Hello <img src="%%RESOURCES%%/world.gif" alt="world" />!</span></h2>
-<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
-    $sessionid . ' with question attempt ' . $try . '</p>';
+		<div class="local_testopaqueqe">
+		<h2>WeBWorK-Moodle Question type</h2><p> (Using Opaque question type)</p>
+		<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
+		$sessionid . ' with question attempt ' . $try . '</p>';
 
 	foreach my $name (keys %$hiddendata)  {
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
 				'" value="' . htmlspecialchars($hiddendata->{$name}//'') . '" />' . "\n";
 	}
+	$output .= "\n<hr>\n". $pg->{body_text}."\n<hr>\n";
+	$output .= '
+        <h4>Actions</h4>
+		<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $disabled . '/> or
+		<input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $disabled . '/>
+		</p>
+		</div>';
 
-        $output .= '
-        <h3>Actions</h3>
-<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $disabled . '/> or
-    <input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $disabled . '/>
-    (with a delay of <input type="text" name="%%IDPREFIX%%slow" value="0.0" size="3" ' .
-            $disabled . '/> seconds during processing).
-    If finishing assign a mark of <input type="text" name="%%IDPREFIX%%mark" value="' .
-            MAX_MARK() . '.00" size="3" ' . $disabled . '/>.</p>
-    <p> <input type="text" name="%%IDPREFIX%%AnSwEr0007" value="foo">
-<p><input type="submit" name="%%IDPREFIX%%fail" value="Throw a SOAP fault" ' . $disabled . '/></p>
-<h3>Submitted data</h3>
-<table>
-<thead>
-<tr><th>Name</th><th>Value</th></tr>
-</thead>
-<tbody>';
+	$output .= '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script>
+			$(document).ready(function(){
+				$( ".clickme" ).click(function() {
+				  $( this).next().slideToggle( "slow", function() {
+					// Animation complete.
+				  });
+				});
+
+			   // jQuery methods go here...
+			});
+		</script>
+		<style>
+			.clickme {background-color: #ccccFF ;}
+		</style>';
+    $output .='<div class="clickme">
+  			Click here to show more details
+			</div>';
+	$output .='<div class="answer-details" style="display: none;">';
+	$output .='
+		<h3>Submitted data</h3>
+		<table>
+		<thead>
+		<tr><th>Name</th><th>Value</th></tr>
+		</thead>
+		<tbody>';
 
 	foreach my $name (keys %$submitteddata)  {
 		$output .= '<tr><th>' . $name . '</td><td>' . 
@@ -950,60 +994,139 @@ sub get_html {
 	}
 
     $output .= '
-</tbody>
-</table>
-</div>';
-        # my $filePath = "setopaque/showInfo.pg";
-        my $filePath = "Library/Rochester/setAlgebra01RealNumbers/lhp1_25-30.pg";
+		</tbody>
+		</table>';
 
-        my $pg = OpaqueServer::RenderProblem::renderOpaquePGProblem($filePath, $submitteddata);
-        $output .= $pg->{body_text};
-        return $output;
+	$output .= pretty_print($pg->{answers},'html',4); #  $pg->{body_text};
+	$output .= '</div>';
+	return $output;
     
 }
 ##############################################
-require "renderOpaquePGProblem.pl";
 
-# my $pg = renderOpaquePGProblem($filePath, $formFields);
+##############################
+# Create the course environment $ce and the database object $db
+##############################
+our $ce = create_course_environment();
+my $dbLayout = $ce->{dbLayout};	
+our $db = WeBWorK::DB->new($dbLayout);
 
-# print "result \n",pretty_print($pg, 'text');
-# print "\n", $pg->{body_text}, "\n";
+sub renderOpaquePGProblem {
+    #print "entering renderOpaquePGProblem\n\n";
+    my $problemFile = shift//'';
+    my $formFields  = shift//'';
+    my %args = ();
 
-# 
-#     * Get the CSS that we use in our return values.
-#     * @return string CSS code.
-# 
+
+	my $key = '3211234567654321';
+	
+	my $user          = $args{user} || fake_user($db);
+	my $set           = $args{'this_set'} || fake_set($db);
+	my $problem_seed  = $args{'problem_seed'} || 0; #$r->param('problem_seed') || 0;
+	my $showHints     = $args{showHints} || 0;
+	my $showSolutions = $args{showSolutions} || 0;
+	my $problemNumber = $args{'problem_number'} || 1;
+    my $displayMode   = $ce->{pg}->{options}->{displayMode};
+    # my $key = $r->param('key');
+  
+	
+	my $translationOptions = {
+		displayMode     => $displayMode,
+		showHints       => $showHints,
+		showSolutions   => $showSolutions,
+		refreshMath2img => 1,
+		processAnswers  => 1,
+		QUIZ_PREFIX     => '',	
+		use_site_prefix => $ce->{server_root_url},
+		use_opaque_prefix => 1,	
+	};
+	my $extras = {};   # Check what this is used for.
+	
+	# Create template of problem then add source text or a path to the source file
+	local $ce->{pg}{specialPGEnvironmentVars}{problemPreamble} = {TeX=>'',HTML=>''};
+	local $ce->{pg}{specialPGEnvironmentVars}{problemPostamble} = {TeX=>'',HTML=>''};
+	my $problem = fake_problem($db, 'problem_seed'=>$problem_seed);
+	$problem->{value} = -1;	
+	if (ref $problemFile) {
+			$problem->source_file('');
+			$translationOptions->{r_source} = $problemFile; # a text string containing the problem
+	} else {
+			$problem->source_file($problemFile); # a path to the problem
+	}
+	
+	#FIXME temporary hack
+	$set->set_id('this set') unless $set->set_id();
+	$problem->problem_id("1") unless $problem->problem_id();
+		
+		
+	my $pg = new WeBWorK::PG(
+		$ce,
+		$user,
+		$key,
+		$set,
+		$problem,
+		123, # PSVN (practically unused in PG)
+		$formFields,
+		$translationOptions,
+		$extras,
+	);
+		$pg;
+}
+
+####################################################################################
+# Create_course_environment -- utility function
+# requires webwork_dir
+# requires courseName to keep warning messages from being reported
+# Remaining inputs are required for most use cases of $ce but not for all of them.
+####################################################################################
+
+$OpaqueServer::courseName = 'gage_course';
+
+sub create_course_environment {
+	my $ce = WeBWorK::CourseEnvironment->new( 
+				{webwork_dir		=>		$OpaqueServer::RootWebwork2Dir, 
+				 courseName         =>      $OpaqueServer::courseName,
+				 webworkURL         =>      $OpaqueServer::RPCURL,
+				 pg_dir             =>      $OpaqueServer::RootPGDir,
+				 });
+	warn "Unable to find environment for course: |$OpaqueServer::courseName|" unless ref($ce);
+	return ($ce);
+}
+
+####################################################################################
+
+
 sub get_css {
 	my $self = shift;
     return '
-.que.opaque .formulation .local_testopaqueqe {
-    border-radius: 5px 5px 5px 5px;
-    background: #E4F1FA;
-    padding: 0.5em;
+		.que.opaque .formulation .local_testopaqueqe {
+			border-radius: 5px 5px 5px 5px;
+			background: #E4F1FA;
+			padding: 0.5em;
 
-}
-.local_testopaqueqe h2 {
-    margin: 0 0 10px;
-}
-.local_testopaqueqe h2 span {
-    background: black;
-    border-radius: 5px 5px 5px 5px;
-    padding: 0 10px;
-    line-height: 60px;
-    font-size: 50px;
-    font-weight: bold;
-    color: #CCBB88;
-}
-.local_testopaqueqe h2 span img {
-    vertical-align: bottom;
-}
-.local_testopaqueqe table th {
-    text-align: left;
-    padding: 0 0.5em 0 0;
-}
-.local_testopaqueqe table td {
-    padding: 0 0.5em 0 0;
-}';
+		}
+		.local_testopaqueqe h2 {
+			margin: 0 0 10px;
+		}
+		.local_testopaqueqe h2 span {
+			background: black;
+			border-radius: 5px 5px 5px 5px;
+			padding: 0 10px;
+			line-height: 60px;
+			font-size: 50px;
+			font-weight: bold;
+			color: #CCBB88;
+		}
+		.local_testopaqueqe h2 span img {
+			vertical-align: bottom;
+		}
+		.local_testopaqueqe table th {
+			text-align: left;
+			padding: 0 0.5em 0 0;
+		}
+		.local_testopaqueqe table td {
+			padding: 0 0.5em 0 0;
+		}';
 }
 sub htmlspecialchars {
 	return shift;
