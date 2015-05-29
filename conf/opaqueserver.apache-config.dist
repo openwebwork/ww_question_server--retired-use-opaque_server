@@ -51,7 +51,8 @@ $OpaqueServer::RootWebwork2Dir = $root_webwork2_dir;
 $OpaqueServer::RPCURL = $rpc_url;
 $OpaqueServer::FilesURL = $files_url;
 $OpaqueServer::WSDLURL = $wsdl_url;
-$OpaqueServer::courseName = $courseName;
+$OpaqueServer::courseName = $courseName;  # course name used mainly for referencing the library
+  
 
 #Alias the Directory
 my $htdocs_dir = "$root_dir/htdocs";
@@ -92,6 +93,7 @@ print "OpaqueServer::RootPGDir = $root_pg_dir\n";
 print "OpaqueServer::RPCurl = $rpc_url\n";
 print "OpaqueServer::FilesURL = $files_url\n";
 print "OpaqueServer WSDL url = $wsdl_url\n";
+print "OpaqueServer course name = $courseName\n";
 </Perl>
 
 # PerlModule OpaqueServer;
