@@ -930,10 +930,11 @@ sub get_html {
 		%$submitteddata,
 	};
 	 my $filePath = $submitteddata->{questionid};
-        $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 
+	    $filePath =~ s/\_\_\_/\-/g;  # hand fact that - is replaced by ___ 3 underscores
+        $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 2 underscores
         $filePath =~ s/^l/L/;    # handle the fact that id's must start with non-caps (opaque/edit_opaque_form.php)
         #  dash - is also not normally allowed as an character in question ids 
-        #  '[_a-zA-Z][_a-zA-Z0-9\-]*';
+        #  '[_a-z][_a-zA-Z0-9]*'; -- standard opaque questionid 
         my $pg = OpaqueServer::renderOpaquePGProblem($filePath, $submitteddata);
         my @PGscore_array = map {$_->score} values %{$pg->{answers}};
         $PGscore=0;
@@ -1080,7 +1081,6 @@ sub renderOpaquePGProblem {
 # Remaining inputs are required for most use cases of $ce but not for all of them.
 ####################################################################################
 
-$OpaqueServer::courseName = 'gage_course';
 
 sub create_course_environment {
 	my $ce = WeBWorK::CourseEnvironment->new( 
