@@ -1,10 +1,5 @@
 #!/usr/bin/perl -w
 
-use lib qw( /Volumes/WW_test/opt/webwork/webwork2/lib 
-            /Volumes/WW_test/opt/webwork/webwork2/pg/lib 
-            /Volumes/WW_test/opt/webwork/ww_opaque_server/lib 
-            );
-
 
 sub main::getEngineInfo {
 	OpaqueServer::getEngineInfo(@_);
@@ -163,11 +158,6 @@ sub setupImageGenerator {
     $self->{imageGenerator} = $image_generator;
 }
 
-# BEGIN {
-#     $OpaqueServer::theServer = new OpaqueServer();
-#     $OpaqueServer::theServer->setupTranslator();
-#     $OpaqueServer::theServer->setupImageGenerator();
-# }
 
 sub downloadFiles {
     my ($self,$files) = @_;
@@ -663,9 +653,18 @@ sub start {
 		$initparams->{questionid} = $questionid;
 		
 	# create startReturn type and fill it
-		my $return = OpaqueServer::StartReturn->new($questionid, $questionversion,
-		    $initparams->{display_readonly}//0); #readonly if this value is defined and 1
-		$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
+		my $return = OpaqueServer::StartReturn->new(
+			$questionid, $questionversion,
+	    	$initparams->{display_readonly}//0
+	    ); #readonly if this value is defined and 1
+	    warn "question id is $questionid";
+	    if (defined($questionid) and $questionid=~/^library/i) {
+			$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
+			# need questionid parameter to find source filepath
+		} else {
+			$return->{XHTML}=$self->get_html_original($return->{questionSession}, 1, $initparams);
+		}
+		#$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 		$return->{CSS} = $self->get_css();
 		$return->{progressInfo} = "Try 1";
 		$return->{questionSession}="12345";
@@ -735,11 +734,11 @@ sub process {
 	$try++ if defined $params->{submit};
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
-	if (defined($params->{questionid}) ){
+	if (defined($params->{questionid} and $params->{questionid}=~/^library/i) ){
 		$return->{XHTML} = $self->get_html($questionSession, $try, $params);
 		# need questionid parameter to find source filepath
 	} else {
-		$return->{XHTML}='';
+		$return->{XHTML}=$self->get_html_original($questionSession, $try, $params);
 	}
 	$return->{progressInfo} = 'Try ' . $try;
 	$return->addResource( 
@@ -1004,6 +1003,58 @@ sub get_html {
     
 }
 ##############################################
+sub get_html_original {
+	my $self = shift;
+	my ($sessionid, $try, $submitteddata) = @_;
+	my $disabled = '';
+	if (substr($sessionid, 0, 3) eq 'ro-') {
+		$disabled = 'disabled="disabled" ';
+	}
+
+	my $hiddendata = {
+		'try' => $try,
+	};
+
+    my $output = '
+<div class="local_testopaqueqe">
+<h2><span>Hello <img src="%%RESOURCES%%/world.gif" alt="world" />!</span></h2>
+<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
+    $sessionid . ' with question attempt ' . $try . '</p>';
+
+	foreach my $name (keys %$hiddendata)  {
+		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
+				'" value="' . htmlspecialchars($hiddendata->{$name}//'') . '" />' . "\n";
+	}
+
+        $output .= '
+        <h3>Actions</h3>
+<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $disabled . '/> or
+    <input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $disabled . '/>
+    (with a delay of <input type="text" name="%%IDPREFIX%%slow" value="0.0" size="3" ' .
+            $disabled . '/> seconds during processing).
+    If finishing assign a mark of <input type="text" name="%%IDPREFIX%%mark" value="' .
+            MAX_MARK() . '.00" size="3" ' . $disabled . '/>.</p>
+<p><input type="submit" name="%%IDPREFIX%%fail" value="Throw a SOAP fault" ' . $disabled . '/></p>
+<h3>Submitted data</h3>
+<table>
+<thead>
+<tr><th>Name</th><th>Value</th></tr>
+</thead>
+<tbody>';
+
+	foreach my $name (keys %$submitteddata)  {
+		$output .= '<tr><th>' . $name . '</td><td>' . 
+		htmlspecialchars($submitteddata->{$name}) . "</th></tr>\n";
+	}
+
+    $output .= '
+</tbody>
+</table>
+</div>';
+
+        return $output;
+    
+}
 
 ##############################
 # Create the course environment $ce and the database object $db
@@ -1096,6 +1147,10 @@ sub create_course_environment {
 ####################################################################################
 
 
+# 
+#     * Get the CSS that we use in our return values.
+#     * @return string CSS code.
+# 
 sub get_css {
 	my $self = shift;
     return '
