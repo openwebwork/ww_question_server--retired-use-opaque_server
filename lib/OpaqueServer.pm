@@ -729,18 +729,18 @@ sub process {
 ############### end report
     $self->handle_special_from_process($params);
 	# initialize the attempt number
-	my $try = $params->{try}//-666;
+	$params->{try} = $params->{try}//-666;
 	# bump the attempt number if this is a submission
-	$try++ if defined $params->{submit};
+	$params->{try}++ if defined $params->{submit};
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
 	if (defined($params->{questionid} and $params->{questionid}=~/^library/i) ){
-		$return->{XHTML} = $self->get_html($questionSession, $try, $params);
+		$return->{XHTML} = $self->get_html($questionSession, $params->{try}, $params);
 		# need questionid parameter to find source filepath
 	} else {
-		$return->{XHTML}=$self->get_html_original($questionSession, $try, $params);
+		$return->{XHTML}=$self->get_html_original($questionSession, $params->{try}, $params);
 	}
-	$return->{progressInfo} = 'Try ' . $try;
+	$return->{progressInfo} = 'Try ' .$params->{try};
 	$return->addResource( 
 		OpaqueServer::Resource->make_from_file(
                 "$OpaqueServer::RootDir/pix/world.gif", 
