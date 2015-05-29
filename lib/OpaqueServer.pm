@@ -961,7 +961,7 @@ sub get_html {
 		</p>
 		</div>';
 
-	$output .= '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	$output .= '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 		<script>
 			$(document).ready(function(){
 				$( ".clickme" ).click(function() {
