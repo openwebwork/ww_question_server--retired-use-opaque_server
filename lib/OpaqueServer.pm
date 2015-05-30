@@ -997,7 +997,7 @@ sub get_html {
 		</tbody>
 		</table>';
 
-	$output .= pretty_print($pg->{answers},'html',4); #  $pg->{body_text};
+	$output .= pretty_print($pg,'html',6); #  $pg->{body_text};
 	$output .= '</div>';
 	return $output;
     
@@ -1068,20 +1068,20 @@ sub renderOpaquePGProblem {
     my $problemFile = shift//'';
     my $formFields  = shift//'';
     my %args = ();
+    #warn "submittedData is  ", join(" ", %$formFields);
 
 
 	my $key = '3211234567654321';
 	
-	my $user          = $args{user} || fake_user($db);
-	my $set           = $args{'this_set'} || fake_set($db);
-	my $problem_seed  = $args{'problem_seed'} || 0; #$r->param('problem_seed') || 0;
-	my $showHints     = $args{showHints} || 0;
-	my $showSolutions = $args{showSolutions} || 0;
-	my $problemNumber = $args{'problem_number'} || 1;
-    my $displayMode   = $ce->{pg}->{options}->{displayMode};
+	my $user          =  fake_user($db); # don't use $formFields->{userid} --it's a number
+	my $set           = $formFields->{'this_set'} || fake_set($db);
+	my $problem_seed  = $formFields->{'randomseed'} || 0;
+	my $showHints     = $formFields->{showHints} || 0;
+	my $showSolutions = $formFields->{showSolutions} || 0;
+	my $problemNumber = $formFields->{'problem_number'} || 1;
+    my $displayMode   = $ce->{pg}->{options}->{displayMode}//'images';
     # my $key = $r->param('key');
-  
-	
+   
 	my $translationOptions = {
 		displayMode     => $displayMode,
 		showHints       => $showHints,
@@ -1099,6 +1099,7 @@ sub renderOpaquePGProblem {
 	local $ce->{pg}{specialPGEnvironmentVars}{problemPostamble} = {TeX=>'',HTML=>''};
 	my $problem = fake_problem($db, 'problem_seed'=>$problem_seed);
 	$problem->{value} = -1;	
+	warn "problem->problem_seed() ", $problem->problem_seed, "\n";
 	if (ref $problemFile) {
 			$problem->source_file('');
 			$translationOptions->{r_source} = $problemFile; # a text string containing the problem
