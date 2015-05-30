@@ -997,7 +997,7 @@ sub get_html {
 		</tbody>
 		</table>';
 
-	$output .= pretty_print($pg,'html',6); #  $pg->{body_text};
+	$output .= pretty_print($pg->{answers},'html',4); #  $pg->{body_text};
 	$output .= '</div>';
 	return $output;
     
