@@ -521,7 +521,6 @@ our $ce;
 our $dbLayout;	
 our $db;
 
-
 #      * A dummy implementation of the getEngineInfo method.
 #      * @return string of XML.
 
@@ -604,30 +603,26 @@ _RETURN              $OpaqueServer::StartReturn
 sub start {
     my $self = shift;
 	my ($questionid, $questionversion, $url, $initialParamNames, $initialParamValues,$cachedResources) = @_;
-	warn "question base url is $url";
+	warn "\n\nin start() with questionid $questionid \n";
+	warn "question base url is $url\n";
+	# get course name
 	$url = $url//'';
 	$url =~ m|.*webwork2/(.*)$|;
-	my $course1Name = ($1)? $1 : 'gage_course';
-	warn "course Name is $course1Name";
-	$OpaqueServer::courseName = $course1Name;
-	$ce = create_course_environment();
-	$dbLayout = $ce->{dbLayout};	
-	$db = WeBWorK::DB->new($dbLayout);
-
-	# FIXME -- we could use this to use different courses to provide the problems.
+	my $courseName = ($1//'')? $1 : 'gage_course';
+	
 	my $paramNames = ref($initialParamNames)? $initialParamNames:[];
 	my $paramValues = ref($initialParamValues)? $initialParamValues:[];
 	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
     # zip params into hash
-        my $initparams = array_combine($paramNames, $paramValues);
-		$initparams->{questionid} = $questionid;
-		
+	my $initparams = array_combine($paramNames, $paramValues);
+	$initparams->{questionid} = $questionid;
+	$initparams->{courseName} = $courseName; #store courseName
+	warn "course used for accessing questions is $courseName\n\n";
 	# create startReturn type and fill it
 		my $return = OpaqueServer::StartReturn->new(
 			$questionid, $questionversion,
 	    	$initparams->{display_readonly}//0
 	    ); #readonly if this value is defined and 1
-	    warn "question id is $questionid";
 	    if (defined($questionid) and $questionid=~/^library/i) {
 			$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 			# need questionid parameter to find source filepath
@@ -637,8 +632,8 @@ sub start {
 		#$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 		$return->{CSS} = $self->get_css();
 		$return->{progressInfo} = "Try 1";
-		$return->{questionSession}="12345";
-
+		$return->{questionSession}=  int(10**5*rand()); 
+        warn "set questionSession =  ",$return->{questionSession},"\n"; 
 		my $resource = OpaqueServer::Resource->make_from_file(
                 "$OpaqueServer::RootDir/pix/world.gif", 
                 'world.gif', 
@@ -686,7 +681,7 @@ our $PGscore=0;
 sub process {
 	my $self = shift;
 	my ($questionSession, $names, $values) = @_;
-    warn "in process with questionSession:  $questionSession";
+    warn "\n\nin process with questionSession:  $questionSession\n";
      # zip params into hash
 	my $params = array_combine($names, $values);
 	
@@ -695,7 +690,7 @@ sub process {
 		for my $key (keys %$params) {
 			$str .= "$key => ".$params->{$key}. ", \n";
 		}
-		warn "\n\nParameters passed to process ".ref($params)." $str\n\n";
+		warn "Parameters passed to process ".ref($params)." $str\n\n";
 ############### end report
     $self->handle_special_from_process($params);
 	# initialize the attempt number
@@ -752,8 +747,6 @@ sub process {
             $return->{results}->{answerLine} = 'Finished by Submit all and finish.';
             $return->{results}->{actionSummary} = 'Finished by Submit all and finish. Treating as a pass.';
             $return->{results}->{attempts} = 0;
-            #my $score = OpaqueServer::Score->new($PGscore);
-            #push @{$return->{results}->{scores}}, $score;
         }
 
 	$return;
@@ -774,7 +767,7 @@ _FAULT               OpaqueServer::Exception
 sub stop {
 	my $self = shift;
 	my $questionSession = shift;
-	warn "\nin stop. session: $questionSession";
+	warn "\nin stop. session: $questionSession\n";
 	$self->handle_special_from_sessionid($questionSession, 'stop');
 }
 
@@ -790,7 +783,7 @@ sub stop {
 sub handle_special {
 	my $self = shift;
 	my ($code,$delay) = @_;
-	warn "in handle_special with code $code and delay $delay";
+	warn "in handle_special with code $code and delay $delay\n";
 	($code eq 'fail') && do {
 		# throw new SoapFault('1', 'Test opaque engine failing on demand.');
 		die SOAP::Fault->faultcode(1)->faultstring('Test opaque engine failing on demand.');
@@ -833,13 +826,9 @@ sub handle_special_from_sessionid {
             $sessionid = substr($sessionid, 3);
     }
 
-    warn "in handle_special_sessionid with 
-	   sessionid $sessionid  method $method";
-
     my ($questionid, $version) = split('-',$sessionid, 1); 
     $version = $version//'';
-    warn "in handle_special_sessionid after split we have  
-	   questionid $questionid version $version method $method";
+    warn "in handle_special_sessionid with  session id: $questionid version $version method $method\n";
 
     $self->handle_special_from_questionid($questionid, $version, $method);
 }
@@ -854,15 +843,13 @@ sub handle_special_from_questionid {
 	my $self = shift;
 	my ($questionid, $version, $method) = @_;
 	$version = $version//'';   # in case version isn't initialized.
-	warn "in handle_special_questionid with 
-	   questionid $questionid version $version method $method";
+	warn "in handle_special_questionid with questionid $questionid version $version method $method\n";
 	my $len = length($method) + 1;
 
 	if (substr($questionid, 0, $len) ne ($method . '.')) {
-		warn "do nothing for $questionid and method $method";
 		return; # Nothing special for this method.
 	}
-	warn "call handle_special with ",substr($questionid,$len), " $version";
+	warn "call handle_special with ",substr($questionid,$len), " $version\n";
     $self->handle_special(substr($questionid, $len), $version);
 }
 
@@ -911,7 +898,7 @@ sub get_html {
         	$PGscore += $el;
         }
         $PGscore = (@PGscore_array) ? $PGscore/@PGscore_array : 0;
-        warn "PG scores $PGscore ", join(" ", @PGscore_array);
+        warn "PG scores $PGscore ", join(" ", @PGscore_array), "\n\n";
 
     my $output = '
 		<div class="local_testopaqueqe">
@@ -1035,9 +1022,12 @@ sub renderOpaquePGProblem {
     my $problemFile = shift//'';
     my $formFields  = shift//'';
     my %args = ();
-    #warn "submittedData is  ", join(" ", %$formFields);
-
-
+     my $courseName = $formFields->{courseName}//'gage_course';
+    warn "rendering $problemFile in course $courseName \n";
+ 	$ce = create_course_environment($courseName);
+ 	$dbLayout = $ce->{dbLayout};	
+ 	$db = WeBWorK::DB->new($dbLayout);
+    warn "db is $db and ce is $ce \n";
 	my $key = '3211234567654321';
 	
 	my $user          =  fake_user($db); # don't use $formFields->{userid} --it's a number
@@ -1102,9 +1092,10 @@ sub renderOpaquePGProblem {
 
 
 sub create_course_environment {
+	my $courseName = shift;
 	my $ce = WeBWorK::CourseEnvironment->new( 
 				{webwork_dir		=>		$OpaqueServer::RootWebwork2Dir, 
-				 courseName         =>      $OpaqueServer::courseName,
+				 courseName         =>      $courseName,
 				 webworkURL         =>      $OpaqueServer::RPCURL,
 				 pg_dir             =>      $OpaqueServer::RootPGDir,
 				 });
