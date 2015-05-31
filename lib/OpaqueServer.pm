@@ -48,7 +48,6 @@ use constant fakeSetName => "Undefined_Set";
 use constant fakeUserName => "Undefined_User";
 
 
-use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
 
 use constant DISPLAY_MODES => {
@@ -94,70 +93,66 @@ sub new {
     return $self;
 }
 
-sub setupTranslator {
-    my $self = shift;
+# sub setupTranslator {
+#     my $self = shift;
+# 
+#     #Warnings are passed into self
+#     #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+# 
+#      warn "\n\nOpaqueServer:  setup translator\n\n";
+# 
+#      
+#     #Create Translator Object
+#     my $translator = WeBWorK::PG::Translator->new;
+# 
+#     #Attach log modules
+#     my @modules = @{ $self->{serverEnviron}{pg}{modules} };
+#     # only apache2 is supported
+# 	push @modules, ["Apache2::Log"], ["APR::Table"];
+# 
+#     #Evaulate all module packs
+#     foreach my $module_packages_ref (@modules) {
+#     	my ($module, @extra_packages) = @$module_packages_ref;
+#     	# the first item is the main package
+#     	$translator->evaluate_modules($module);
+#     	# the remaining items are "extra" packages
+#     	$translator->load_extra_packages(@extra_packages);
+#     }
+# 
+#     #Only type of output is images
+#     $self->{problemEnviron}{displayMode} 	= "HTML_dpng";
+#     $self->{problemEnviron}{languageMode}       = $self->{problemEnviron}{displayMode};
+#     $self->{problemEnviron}{outputMode}		= $self->{problemEnviron}{displayMode};
+# 
+#     $self->{translator} = $translator;
+# }
 
-    #Warnings are passed into self
-    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
-
-     warn "\n\nOpaqueServer:  setup translator\n\n";
-
-     
-    #Create Translator Object
-    my $translator = WeBWorK::PG::Translator->new;
-
-    #Attach log modules
-    my @modules = @{ $self->{serverEnviron}{pg}{modules} };
-    # HACK for apache2
-    if (MP2) {
-	push @modules, ["Apache2::Log"], ["APR::Table"];
-    } else {
-    	push @modules, ["Apache::Log"];
-    }
-
-    #Evaulate all module packs
-    foreach my $module_packages_ref (@modules) {
-    	my ($module, @extra_packages) = @$module_packages_ref;
-    	# the first item is the main package
-    	$translator->evaluate_modules($module);
-    	# the remaining items are "extra" packages
-    	$translator->load_extra_packages(@extra_packages);
-    }
-
-    #Only type of output is images
-    $self->{problemEnviron}{displayMode} 	= "HTML_dpng";
-    $self->{problemEnviron}{languageMode}       = $self->{problemEnviron}{displayMode};
-    $self->{problemEnviron}{outputMode}		= $self->{problemEnviron}{displayMode};
-
-    $self->{translator} = $translator;
-}
-
-sub setupImageGenerator {
-    my $self = shift;
-    warn "\n\n creating image generator \n\n";
-    #Warnings are passed into self
-    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
-
-    my $image_generator;
-    my %imagesModeOptions = %{$self->{serverEnviron}->{pg}{displayModeOptions}{images}};
-    $image_generator = WeBWorK::PG::ImageGenerator->new(
-	tempDir         => $self->{serverEnviron}->{opaqueServerDirs}->{tmp}, # global temp dir
-	latex	        => $self->{serverEnviron}->{externalPrograms}->{latex},
-	dvipng          => $self->{serverEnviron}->{externalPrograms}->{dvipng},
-	useCache        => 1,
-	cacheDir        => $self->{serverEnviron}->{opaqueServerDirs}{equationCache},
-	cacheURL        => $self->{serverEnviron}->{opaqueServerURLs}{equationCache},
-	cacheDB         => $self->{serverEnviron}->{opaqueServerFiles}{equationCacheDB},
-	useMarkers      => ($imagesModeOptions{dvipng_align} && $imagesModeOptions{dvipng_align} eq 'mysql'),
-	dvipng_align    => $imagesModeOptions{dvipng_align},
-	dvipng_depth_db => $imagesModeOptions{dvipng_depth_db},
-    );
-    #DEFINE CLOSURE CLASS FOR IMAGE GENERATOR
-    $self->{problemEnviron}{imagegen} = new OpaqueServer::Utils::RestrictedClosureClass($image_generator, "add");
-
-    $self->{imageGenerator} = $image_generator;
-}
-
+# sub setupImageGenerator {
+#     my $self = shift;
+#     warn "\n\n creating image generator \n\n";
+#     #Warnings are passed into self
+#     #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+# 
+#     my $image_generator;
+#     my %imagesModeOptions = %{$self->{serverEnviron}->{pg}{displayModeOptions}{images}};
+#     $image_generator = WeBWorK::PG::ImageGenerator->new(
+# 	tempDir         => $self->{serverEnviron}->{opaqueServerDirs}->{tmp}, # global temp dir
+# 	latex	        => $self->{serverEnviron}->{externalPrograms}->{latex},
+# 	dvipng          => $self->{serverEnviron}->{externalPrograms}->{dvipng},
+# 	useCache        => 1,
+# 	cacheDir        => $self->{serverEnviron}->{opaqueServerDirs}{equationCache},
+# 	cacheURL        => $self->{serverEnviron}->{opaqueServerURLs}{equationCache},
+# 	cacheDB         => $self->{serverEnviron}->{opaqueServerFiles}{equationCacheDB},
+# 	useMarkers      => ($imagesModeOptions{dvipng_align} && $imagesModeOptions{dvipng_align} eq 'mysql'),
+# 	dvipng_align    => $imagesModeOptions{dvipng_align},
+# 	dvipng_depth_db => $imagesModeOptions{dvipng_depth_db},
+#     );
+#     #DEFINE CLOSURE CLASS FOR IMAGE GENERATOR
+#     $self->{problemEnviron}{imagegen} = new OpaqueServer::Utils::RestrictedClosureClass($image_generator, "add");
+# 
+#     $self->{imageGenerator} = $image_generator;
+# }
+# 
 
 sub downloadFiles {
     my ($self,$files) = @_;
@@ -170,188 +165,188 @@ sub downloadFiles {
 }
 
 # returns a pg core object
-sub runTranslator {
-    my ($self,$source,$env) = @_;
-    warn "running the translator ";
-    #warn "source is $source";
-    
-    $source = decode_base64($source);
-    #warn "SOURCE is $source";
-    local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
-    #Defining the Environment
-    while ( my ($key, $value) = each(%$env) ) {
-	$self->{problemEnviron}{$key} = $value;
-    }
+# sub runTranslator {
+#     my ($self,$source,$env) = @_;
+#     warn "running the translator ";
+#     #warn "source is $source";
+#     
+#     $source = decode_base64($source);
+#     #warn "SOURCE is $source";
+#     local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+#     #Defining the Environment
+#     while ( my ($key, $value) = each(%$env) ) {
+# 	$self->{problemEnviron}{$key} = $value;
+#     }
+# 
+#     #Clear some stuff
+#     $self->{translator}->{safe} = undef;
+#     $self->{translator}->{envir} = undef;
+#     $self->{translator}->{safe} = new WWSafe;
+# 
+#     #Setting Environment
+#     $self->{translator}->environment($self->{problemEnviron});
+# 
+#     #Initializing
+#     $self->{translator}->initialize();
+# 
+#     #Safe
+#     #$self->{safe} = new Safe;
+# 
+#     #PRE-LOAD MACRO FILES
+#     eval{$self->{translator}->pre_load_macro_files(
+#         $self->{safe},
+# 	$self->{serverEnviron}->{pg}->{directories}->{macros},
+# 	)};
+# 	warn "Error while preloading macro files: $@" if $@;
+# 	#'PG.pl', 'dangerousMacros.pl','IO.pl','PGbasicmacros.pl','PGanswermacros.pl'
+# 
+#     #LOAD MACROS INTO TRANSLATOR
+#     foreach (qw(PG.pl ) ) {     #    dangerousMacros.pl IO.pl)) {
+# 	my $macroPath = $self->{serverEnviron}->{pg}->{directories}->{macros} . "/$_";
+# 	my $err = $self->{translator}->unrestricted_load($macroPath);
+# 	warn "Error while loading $macroPath: $err" if $err;
+#     }
+# 
+#     #SET OPCODE MASK
+#     $self->{translator}->set_mask();
+# 
+#     #INSERT PROBLEM SOURCE CODE INTO TRANSLATOR
+#     eval { $self->{translator}->source_string( $source ) };
+#     $@ and die("bad source");
+# 
+#     #CREATE SAFETY FILTER
+#     $self->{translator}->rf_safety_filter(\&OpaqueServer::nullSafetyFilter);
+# 
+#     #RUN
+#    eval{$self->{translator}->translate()};
+#    warn "errors $@" if $@;
+#    #warn "translation errors ", $self->{warnings};
+#    #warn "done translating";
+# }
 
-    #Clear some stuff
-    $self->{translator}->{safe} = undef;
-    $self->{translator}->{envir} = undef;
-    $self->{translator}->{safe} = new WWSafe;
+# sub runChecker {
+#     my $self = shift;
+# 
+#     #Warnings are passed into self
+#     #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
+# 
+#     my $answerArray = shift;
+#     my $answerHash = {};
+#     for(my $i=0;$i<@{$answerArray};$i++) {
+#         $answerHash->{decode_base64($answerArray->[$i]{field})} = decode_base64($answerArray->[$i]{answer});
+#     }
+#     warn "\nin runChecker answerHash is ", pretty_print_text($answerArray) if ($DEBUG);
+#     warn "run process_answers in translator";
+#     $self->{translator}->process_answers($answerHash);
+#     warn "\nout of process_answers  \n";
+#     warn "translator ", join(" ", sort keys %{$self->{translator}});
+#     warn "PROCESSED ANSWERS are \n",pretty_print_text($self->{translator}->rh_evaluated_answers)  if ($DEBUG); 
+#     # retrieve the problem state and give it to the translator
+#     #warn "PG: retrieving the problem state and giving it to the translator\n";
+#     $self->{translator}->rh_problem_state({
+#         recorded_score =>       "0",
+#         num_of_correct_ans =>   "0",
+#         num_of_incorrect_ans => "0",
+#     });
+# 
+#     # determine an entry order -- the ANSWER_ENTRY_ORDER flag is built by
+#     # the PG macro package (PG.pl)
+#     #warn "PG: determining an entry order\n";
+#     my @answerOrder = $self->{translator}->rh_flags->{ANSWER_ENTRY_ORDER}
+#         ? @{ $self->{translator}->rh_flags->{ANSWER_ENTRY_ORDER} }
+#         : keys %{ $self->{translator}->rh_evaluated_answers };
+# 
+# 
+#     # install a grader -- use the one specified in the problem,
+#     # or fall back on the default from the course environment.
+#     # (two magic strings are accepted, to avoid having to
+#     # reference code when it would be difficult.)
+#     my $grader = $self->{translator}->rh_flags->{PROBLEM_GRADER_TO_USE} || $self->{serverEnviron}->{pg}->{options}->{grader};
+#     warn "PG: installing a grader $grader";
+#     $grader = $self->{translator}->rf_std_problem_grader if $grader eq "std_problem_grader";
+#     $grader = $self->{translator}->rf_avg_problem_grader if $grader eq "avg_problem_grader";
+#     die "Problem grader $grader is not a CODE reference." unless ref $grader eq "CODE";
+#     $self->{translator}->rf_problem_grader($grader);
+#     warn "\ngrading problem";    # grade the problem
+#     my ($result, $state);
+#     eval{
+#     ($result, $state) = $self->{translator}->grade_problem(
+#         answers_submitted  => 1,
+#         ANSWER_ENTRY_ORDER => \@answerOrder,
+#         %{$answerHash}  #FIXME?  this is used by sequentialGrader is there a better way?
+#     );
+#     };
+#     warn "errors from grading $@" if $@;
+#     warn "after grading result: ", join(" ", %$result),  "\nstate ", join(" ", %$state);
+#     my $answers = $self->{translator}->rh_evaluated_answers;
+#     warn "evaluated answers: ", join(" ", %$answers);
+#     my $key;
+#     my $preview;
+#     my $answerResponse = {};
+#     my @answersArray;
+#     warn "generate previews and mung answers";
+#     foreach $key (keys %{$answers}) {
+#         #PREVIEW GENERATOR
+# 
+#         	
+#         ############################################        
+#         warn "answerhash $key contains:\n ----------", pretty_print_text($answers->{$key})  if ($DEBUG);
+#         ################################################
+#         $preview = $answers->{"$key"}->{"preview_latex_string"};
+#         $preview = "" unless defined $preview and $preview ne "";
+# 
+#         eval{ $preview = $self->{imageGenerator}->add($preview);
+#         };
+#         warn " errors from generating images $@" if $@;
+#         #ANSWER STRUCT
+#         $answerResponse = {};
+#         $answerResponse->{field} = encode_base64($key);
+#         $answerResponse->{answer} = encode_base64($answers->{"$key"}->{"original_student_ans"}//'');
+#         $answerResponse->{answer_msg} = encode_base64($answers->{"$key"}->{"ans_message"}//'');
+#         $answerResponse->{correct} = encode_base64($answers->{"$key"}->{"correct_ans"}//'');
+#         $answerResponse->{score} = $answers->{"$key"}->{"score"//''};
+#         $answerResponse->{evaluated} = encode_base64($answers->{"$key"}->{"student_ans"}//'');
+#         $answerResponse->{preview} = encode_base64($preview//'');
+#         push(@answersArray, $answerResponse);
+#     }
+#     #CORE::warn $self->{errors};
+#     warn "leaving run checker with answers\n\n", join(" ", @answersArray);
+#     return \@answersArray;
+# }
 
-    #Setting Environment
-    $self->{translator}->environment($self->{problemEnviron});
-
-    #Initializing
-    $self->{translator}->initialize();
-
-    #Safe
-    #$self->{safe} = new Safe;
-
-    #PRE-LOAD MACRO FILES
-    eval{$self->{translator}->pre_load_macro_files(
-        $self->{safe},
-	$self->{serverEnviron}->{pg}->{directories}->{macros},
-	)};
-	warn "Error while preloading macro files: $@" if $@;
-	#'PG.pl', 'dangerousMacros.pl','IO.pl','PGbasicmacros.pl','PGanswermacros.pl'
-
-    #LOAD MACROS INTO TRANSLATOR
-    foreach (qw(PG.pl ) ) {     #    dangerousMacros.pl IO.pl)) {
-	my $macroPath = $self->{serverEnviron}->{pg}->{directories}->{macros} . "/$_";
-	my $err = $self->{translator}->unrestricted_load($macroPath);
-	warn "Error while loading $macroPath: $err" if $err;
-    }
-
-    #SET OPCODE MASK
-    $self->{translator}->set_mask();
-
-    #INSERT PROBLEM SOURCE CODE INTO TRANSLATOR
-    eval { $self->{translator}->source_string( $source ) };
-    $@ and die("bad source");
-
-    #CREATE SAFETY FILTER
-    $self->{translator}->rf_safety_filter(\&OpaqueServer::nullSafetyFilter);
-
-    #RUN
-   eval{$self->{translator}->translate()};
-   warn "errors $@" if $@;
-   #warn "translation errors ", $self->{warnings};
-   #warn "done translating";
-}
-
-sub runChecker {
-    my $self = shift;
-
-    #Warnings are passed into self
-    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
-
-    my $answerArray = shift;
-    my $answerHash = {};
-    for(my $i=0;$i<@{$answerArray};$i++) {
-        $answerHash->{decode_base64($answerArray->[$i]{field})} = decode_base64($answerArray->[$i]{answer});
-    }
-    warn "\nin runChecker answerHash is ", pretty_print_text($answerArray) if ($DEBUG);
-    warn "run process_answers in translator";
-    $self->{translator}->process_answers($answerHash);
-    warn "\nout of process_answers  \n";
-    warn "translator ", join(" ", sort keys %{$self->{translator}});
-    warn "PROCESSED ANSWERS are \n",pretty_print_text($self->{translator}->rh_evaluated_answers)  if ($DEBUG); 
-    # retrieve the problem state and give it to the translator
-    #warn "PG: retrieving the problem state and giving it to the translator\n";
-    $self->{translator}->rh_problem_state({
-        recorded_score =>       "0",
-        num_of_correct_ans =>   "0",
-        num_of_incorrect_ans => "0",
-    });
-
-    # determine an entry order -- the ANSWER_ENTRY_ORDER flag is built by
-    # the PG macro package (PG.pl)
-    #warn "PG: determining an entry order\n";
-    my @answerOrder = $self->{translator}->rh_flags->{ANSWER_ENTRY_ORDER}
-        ? @{ $self->{translator}->rh_flags->{ANSWER_ENTRY_ORDER} }
-        : keys %{ $self->{translator}->rh_evaluated_answers };
-
-
-    # install a grader -- use the one specified in the problem,
-    # or fall back on the default from the course environment.
-    # (two magic strings are accepted, to avoid having to
-    # reference code when it would be difficult.)
-    my $grader = $self->{translator}->rh_flags->{PROBLEM_GRADER_TO_USE} || $self->{serverEnviron}->{pg}->{options}->{grader};
-    warn "PG: installing a grader $grader";
-    $grader = $self->{translator}->rf_std_problem_grader if $grader eq "std_problem_grader";
-    $grader = $self->{translator}->rf_avg_problem_grader if $grader eq "avg_problem_grader";
-    die "Problem grader $grader is not a CODE reference." unless ref $grader eq "CODE";
-    $self->{translator}->rf_problem_grader($grader);
-    warn "\ngrading problem";    # grade the problem
-    my ($result, $state);
-    eval{
-    ($result, $state) = $self->{translator}->grade_problem(
-        answers_submitted  => 1,
-        ANSWER_ENTRY_ORDER => \@answerOrder,
-        %{$answerHash}  #FIXME?  this is used by sequentialGrader is there a better way?
-    );
-    };
-    warn "errors from grading $@" if $@;
-    warn "after grading result: ", join(" ", %$result),  "\nstate ", join(" ", %$state);
-    my $answers = $self->{translator}->rh_evaluated_answers;
-    warn "evaluated answers: ", join(" ", %$answers);
-    my $key;
-    my $preview;
-    my $answerResponse = {};
-    my @answersArray;
-    warn "generate previews and mung answers";
-    foreach $key (keys %{$answers}) {
-        #PREVIEW GENERATOR
-
-        	
-        ############################################        
-        warn "answerhash $key contains:\n ----------", pretty_print_text($answers->{$key})  if ($DEBUG);
-        ################################################
-        $preview = $answers->{"$key"}->{"preview_latex_string"};
-        $preview = "" unless defined $preview and $preview ne "";
-
-        eval{ $preview = $self->{imageGenerator}->add($preview);
-        };
-        warn " errors from generating images $@" if $@;
-        #ANSWER STRUCT
-        $answerResponse = {};
-        $answerResponse->{field} = encode_base64($key);
-        $answerResponse->{answer} = encode_base64($answers->{"$key"}->{"original_student_ans"}//'');
-        $answerResponse->{answer_msg} = encode_base64($answers->{"$key"}->{"ans_message"}//'');
-        $answerResponse->{correct} = encode_base64($answers->{"$key"}->{"correct_ans"}//'');
-        $answerResponse->{score} = $answers->{"$key"}->{"score"//''};
-        $answerResponse->{evaluated} = encode_base64($answers->{"$key"}->{"student_ans"}//'');
-        $answerResponse->{preview} = encode_base64($preview//'');
-        push(@answersArray, $answerResponse);
-    }
-    #CORE::warn $self->{errors};
-    warn "leaving run checker with answers\n\n", join(" ", @answersArray);
-    return \@answersArray;
-}
-
-sub runImageGenerator {
-    my $self = shift;
-    $self->{imageGenerator}->render(body_text => $self->{translator}->r_text);
-}
-
-sub runImageGeneratorAnswers {
-    my $self = shift;
-    $self->{imageGenerator}->render();
-}
-
-sub buildProblemResponse {
-    my $self = shift;
-    my $response = {};
-    $response->{errors} = $self->{translator}->errors;
-    $response->{warnings} = $self->{warnings};
-    $response->{output} = encode_base64(${$self->{translator}->r_text});
-    $response->{seed} = $self->{translator}->{envir}{problemSeed};
-    $response->{grading} = $self->{translator}->rh_flags->{showPartialCorrectAnswers};
-    return $response;
-}
-sub clean {
-    my $self = shift;
-    $self->{translator}->{errors} = undef;
-    $self->{warnings} = "";
-
-
-}
-
-sub cleanServer {
-    my $self = shift;
-    delete($self->{translator});# = undef;
-    delete($self->{imageGenerator});# = undef;
-}
+# sub runImageGenerator {
+#     my $self = shift;
+#     $self->{imageGenerator}->render(body_text => $self->{translator}->r_text);
+# }
+# 
+# sub runImageGeneratorAnswers {
+#     my $self = shift;
+#     $self->{imageGenerator}->render();
+# }
+# 
+# sub buildProblemResponse {
+#     my $self = shift;
+#     my $response = {};
+#     $response->{errors} = $self->{translator}->errors;
+#     $response->{warnings} = $self->{warnings};
+#     $response->{output} = encode_base64(${$self->{translator}->r_text});
+#     $response->{seed} = $self->{translator}->{envir}{problemSeed};
+#     $response->{grading} = $self->{translator}->rh_flags->{showPartialCorrectAnswers};
+#     return $response;
+# }
+# sub clean {
+#     my $self = shift;
+#     $self->{translator}->{errors} = undef;
+#     $self->{warnings} = "";
+# 
+# 
+# }
+# 
+# sub cleanServer {
+#     my $self = shift;
+#     delete($self->{translator});# = undef;
+#     delete($self->{imageGenerator});# = undef;
+# }
 
 sub translateDisplayModeNames($) {
 	my $name = shift//'images';
@@ -362,50 +357,7 @@ sub nullSafetyFilter {
 	return shift, 0; # no errors
 }
 
-sub pretty_print_text {    # provides text output -- NOT a method
-    my $r_input = shift;
-    my $level = shift;
-    $level = 5 unless defined($level);
-    $level--;
-    my $space = " "x(5-$level);
-    return "PGalias has too much info. Try \$PG->{PG_alias}->{resource_list}" if ref($r_input) eq 'PGalias';  # PGalias just has too much information
-    return 'too deep' unless $level > 0;  # only print four levels of hashes (safety feature)
-    my $out = '';
-    if ( not ref($r_input) ) {
-        if (defined $r_input) {
-            if ($r_input =~/=$/  or $r_input =~/\+$/) {
-        		$out = decode_base64($r_input) ; # try to detect base64	
-        	} else {
-    			$out = $r_input;    # not a reference
-    		}
-    	}
-    	#$out =~ s/</&lt;/g  ;  # protect for HTML output
-    } elsif ("$r_input" =~/hash/i) {  # this will pick up objects whose '$self' is hash and so works better than ref($r_iput).
-	    local($^W) = 0;
-	    
-		$out .= "\n$space$r_input : " ;
-		
-		
-		foreach my $key ( sort ( keys %$r_input )) {
-		    next if $key eq 'context'; #skip contexts -- they are too long
-			$out .= "\n$space$key => ".pretty_print_text($r_input->{$key}, $level);
-		}
-	} elsif ("$r_input" =~/array/i ) {
-		my @array = @$r_input;
-		$out.= "\n$space$r_input : ";
-		$out .= "( " ;
-		while (@array) {
-			$out .= pretty_print_text(shift @array, $level) . " , ";
-		}
-		$out .= " )";
-	} elsif ($r_input =~ /CODE/) {
-		$out = "\n$space$r_input";
-	} else {
-	  	$out = "\n$space$r_input";
-		#$out =~ s/</&lt;/g; # protect for HTML output
-	}
-		$out;
-}
+
 ####################################################################################
 #SOAP CALLABLE FUNCTIONS
 ####################################################################################
@@ -561,6 +513,13 @@ sub hello {
 # 	warn "OpaqueServer handler called with @_";
 # 
 # }
+###############################################################
+# new code
+###############################################################
+
+our $ce;
+our $dbLayout;	
+our $db;
 
 
 #      * A dummy implementation of the getEngineInfo method.
@@ -645,6 +604,17 @@ _RETURN              $OpaqueServer::StartReturn
 sub start {
     my $self = shift;
 	my ($questionid, $questionversion, $url, $initialParamNames, $initialParamValues,$cachedResources) = @_;
+	warn "question base url is $url";
+	$url = $url//'';
+	$url =~ m|.*webwork2/(.*)$|;
+	my $course1Name = ($1)? $1 : 'gage_course';
+	warn "course Name is $course1Name";
+	$OpaqueServer::courseName = $course1Name;
+	$ce = create_course_environment();
+	$dbLayout = $ce->{dbLayout};	
+	$db = WeBWorK::DB->new($dbLayout);
+
+	# FIXME -- we could use this to use different courses to provide the problems.
 	my $paramNames = ref($initialParamNames)? $initialParamNames:[];
 	my $paramValues = ref($initialParamValues)? $initialParamValues:[];
 	$self->handle_special_from_questionid($questionid, $questionversion, 'start');
@@ -1059,9 +1029,6 @@ sub get_html_original {
 ##############################
 # Create the course environment $ce and the database object $db
 ##############################
-our $ce = create_course_environment();
-my $dbLayout = $ce->{dbLayout};	
-our $db = WeBWorK::DB->new($dbLayout);
 
 sub renderOpaquePGProblem {
     #print "entering renderOpaquePGProblem\n\n";
