@@ -623,7 +623,7 @@ sub start {
 			$questionid, $questionversion,
 	    	$initparams->{display_readonly}//0
 	    ); #readonly if this value is defined and 1
-	    if (defined($questionid) and $questionid=~/^library/i) {
+	    if (defined($questionid) and $questionid=~/\.pg/i) {
 			$return->{XHTML} = $self->get_html($return->{questionSession}, 1, $initparams);
 			# need questionid parameter to find source filepath
 		} else {
