@@ -1,12 +1,24 @@
-Webwork Question Server
-----------------------
-Version: 1.0 (stable RC1)
-Maintainer: Matthew Leventi  <mleventi@gmail.com>
-CVS: cvs.webwork.rochester.edu:/webwork/cvs/system ww_question_server
+Configuration and install instructions:
 
-** If your using this send me an email **
+The standard location for directory is at `/opt/webwork`.
 
-Note: You don't need to install the WeBWorK system for this server to function. All you need is the PG libraries.
+`cd /opt/webwork`
+`git clone https://github.com/mgage/opaque_server.git`
 
-Setup:
-	1) Run the bin/setup/setup.pl
+
+Copy `conf/opaqueserver.apache-conf.dist` to  `conf/opaqueserver.apache-conf`
+
+If WeBWorK is set up in the standard way with directories 
+`/opt/webwork/webwork2` and `/opt/webwor/pg` then the paths to those 
+directories do not need to be changed. Otherwise adjustments may be needed
+in `opaqueserver.apache-conf`.
+
+Add the line 
+
+`Include /opt/webwork/ww_opaque_server/conf/opaqueserver.apache-config`
+
+to the end of the file `/opt/webwork/webwork2/conf/webwork.apache2-config`
+(or to `webwork.apache2-config` for  installations using apache2 but not apache2.4)
+
+This will soon be moved to the github.com/openwebwork site. For now 
+raise issues at https://github.com/mgage.
