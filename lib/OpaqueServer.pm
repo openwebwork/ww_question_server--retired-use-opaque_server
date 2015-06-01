@@ -699,7 +699,7 @@ sub process {
 	$params->{try}++ if defined $params->{submit};
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
-	if (defined($params->{questionid} and $params->{questionid}=~/^library/i) ){
+	if (defined($params->{questionid} and $params->{questionid}=~/\.pg/i) ){
 		$return->{XHTML} = $self->get_html($questionSession, $params->{try}, $params);
 		# need questionid parameter to find source filepath
 	} else {
@@ -888,7 +888,7 @@ sub get_html {
 	 my $filePath = $submitteddata->{questionid};
 	    $filePath =~ s/\_\_\_/\-/g;  # hand fact that - is replaced by ___ 3 underscores
         $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 2 underscores
-        $filePath =~ s/^l/L/;    # handle the fact that id's must start with non-caps (opaque/edit_opaque_form.php)
+        $filePath =~ s/^library/Library/;    # handle the fact that id's must start with non-caps (opaque/edit_opaque_form.php)
         #  dash - is also not normally allowed as an character in question ids 
         #  '[_a-z][_a-zA-Z0-9]*'; -- standard opaque questionid 
         my $pg = OpaqueServer::renderOpaquePGProblem($filePath, $submitteddata);
