@@ -1032,7 +1032,11 @@ sub renderOpaquePGProblem {
 	
 	my $user          =  fake_user($db); # don't use $formFields->{userid} --it's a number
 	my $set           = $formFields->{'this_set'} || fake_set($db);
-	my $problem_seed  = $formFields->{'randomseed'} || 0;
+	# use Tim Hunt's magic formula for creating the random seed:
+	# _randomseed is the constant 123456789 and attempt is incremented by 1
+	# incrementing by more than one helps some pseudo random number generators ????	
+	my $problem_seed  = $formFields->{'-_randomseed'} 
+	                     + 12637946 *($formFields->{'-_attempt'}) || 0;
 	my $showHints     = $formFields->{showHints} || 0;
 	my $showSolutions = $formFields->{showSolutions} || 0;
 	my $problemNumber = $formFields->{'problem_number'} || 1;
