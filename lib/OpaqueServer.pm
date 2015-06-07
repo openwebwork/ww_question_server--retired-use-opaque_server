@@ -946,10 +946,13 @@ sub get_html {
 		<tbody>';
 
 	foreach my $name (keys %$submitteddata)  {
-		$output .= '<tr><th>' . $name . '</td><td>' . 
-		htmlspecialchars($submitteddata->{$name}) . "</th></tr>\n";
+		$output .= '<tr><th>' . $name . '</th><td>' . 
+		htmlspecialchars($submitteddata->{$name}) . "</td></tr>\n";
 	}
-
+    my $computed_problem_seed  = $submitteddata->{'randomseed'} 
+	                     + 12637946 *($submitteddata->{'attempt'}) || 0;
+	$output .= '<tr><th>computed problem seed </td><td>' .
+	         $computed_problem_seed . "</td></tr>\n";
     $output .= '
 		</tbody>
 		</table>';
@@ -1035,8 +1038,8 @@ sub renderOpaquePGProblem {
 	# use Tim Hunt's magic formula for creating the random seed:
 	# _randomseed is the constant 123456789 and attempt is incremented by 1
 	# incrementing by more than one helps some pseudo random number generators ????	
-	my $problem_seed  = $formFields->{'-_randomseed'} 
-	                     + 12637946 *($formFields->{'-_attempt'}) || 0;
+	my $problem_seed  = $formFields->{'randomseed'} 
+	                     + 12637946 *($formFields->{'attempt'}) || 0;
 	my $showHints     = $formFields->{showHints} || 0;
 	my $showSolutions = $formFields->{showSolutions} || 0;
 	my $problemNumber = $formFields->{'problem_number'} || 1;
