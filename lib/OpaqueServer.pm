@@ -883,12 +883,15 @@ sub get_html {
 	if (substr($sessionid, 0, 3) eq 'ro-') {
 		$disabled = 'disabled="disabled" ';
 	}
-
+	my $submitDisabled   = (defined( $submitteddata->{WWfinish} ) )?'disabled="disabled"':'';
+	my $WWsubmitDisabled = (!defined( $submitteddata->{submit}) or defined( $submitteddata->{WWfinish} ) )?'disabled="disabled"':'';
+    my $finishDisabled = (!defined( $submitteddata->{submit} ) or $disabled ne '' )?'disabled="disabled"':'';
 	my $hiddendata = {
 		'try' => $try,
-		'questionid' => $submitteddata->{questionid},
+		'questionid' => $submitteddata->{questionid}, 
 		%$submitteddata,
 	};
+	$hiddendata->{submit}='Submit' if $submitteddata->{WWfinish} ;
 	 my $filePath = $submitteddata->{questionid};
 	    $filePath =~ s/\_\_\_/\-/g;  # hand fact that - is replaced by ___ 3 underscores
         $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 2 underscores
@@ -906,8 +909,6 @@ sub get_html {
     my $answerOrder = $pg->{flags}->{ANSWER_ENTRY_ORDER};
 	my $answers = $pg->{answers};
 	my $ce = create_course_environment($submitteddata->{courseName});
-	warn "get_html finish submitteddata  ", $submitteddata->{finish}, " ", ($submitteddata->{finish} eq 'Finish')?1:0
-	;
 
     my $tbl = WeBWorK::Utils::AttemptsTable->new(
 		$answers,
@@ -916,8 +917,8 @@ sub get_html {
 		displayMode            => $ce->{pg}->{options}->{displayMode}//'images',
 		imgGen                 => '',	
 		showAttemptPreviews    => 1,
-		showAttemptResults     => ($try>3), #($submitteddata->{finish} eq 'Finish')?1:0,
-		showCorrectAnswers     => ($try>3), #(defined($submitteddata->{finish}))?1:0 ,
+		showAttemptResults     => ($WWsubmitDisabled eq '')?0:1,
+		showCorrectAnswers     => ($WWsubmitDisabled eq '')?0:1 ,
 		showMessages           => 1,
 		ce                     => $ce,
 	);
@@ -932,13 +933,7 @@ sub get_html {
 		<h2>WeBWorK-Moodle Question type</h2><p> (Using Opaque question type)</p>
 		<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
 		$sessionid . ' with question attempt ' . $try . 
-	    '</p><p> Currently correct answers will be shown after the third attempt. 
-	    It would be preferrable if 
-	    this table was shown after a student presses the finish button, 
-	    but the finish process 
-	    does not currently refresh the main html section so the 
-	    table is not updated with the last
-	    submission via finish. </p>';
+	    '</p><p>  </p>';
 
 	foreach my $name (keys %$hiddendata)  {
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
@@ -948,8 +943,9 @@ sub get_html {
 	$output .= "\n<hr>\n". $pg->{body_text}."\n<hr>\n";
 	$output .= '
         <h4>Actions</h4>
-		<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $disabled . '/> or
-		<input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $disabled . '/>
+		<p><input type="submit" name="%%IDPREFIX%%submit" value="Submit" ' . $submitDisabled . '/> or
+		<input type="submit" name="%%IDPREFIX%%WWfinish" value="WWFinish" ' . $WWsubmitDisabled . '/> or
+		<input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $finishDisabled . '/>
 		</p>
 		</div>';
 
@@ -980,9 +976,9 @@ sub get_html {
 		</thead>
 		<tbody>';
 
-	foreach my $name (keys %$submitteddata)  {
+	foreach my $name (keys %$hiddendata)  {
 		$output .= '<tr><th>' . $name . '</th><td>' . 
-		htmlspecialchars($submitteddata->{$name}) . "</td></tr>\n";
+		htmlspecialchars($hiddendata->{$name}) . "</td></tr>\n";
 	}
     my $computed_problem_seed  = $submitteddata->{'randomseed'} 
 	                     + 12637946 *($submitteddata->{'attempt'}) || 0;
