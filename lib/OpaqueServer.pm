@@ -39,6 +39,7 @@ use OpaqueServer::Score;
 
 use WeBWorK::PG::Translator;
 use WeBWorK::PG::ImageGenerator;
+use WeBWorK::Utils::AttemptsTable;
 
 use Memory::Usage;
 
@@ -66,32 +67,34 @@ use constant MAX_MARK => 1;
 our $DEBUG=0;
 our $memory_usage = Memory::Usage->new();
 
-sub new {
-    my $self = shift;
-    $self = {};
-    #Base Conf
-    $main::VERSION = "2.3.2";
-
-    #Warnings are passed into self
-
-    #Construct the Server Environment
-    warn "Calling Opaqueserver::Environment to construct the environment in OpaqueServer::new";
-    my $serverEnviron = new OpaqueServer::Environment($OpaqueServer::RootDir);
-    #FIXME Hacks
-    
-    #$SIG{__WARN__} = sub { $self->{warnings} .= shift };
-
-    #Keep the Default Server Environment
-    $self->{serverEnviron} = $serverEnviron;
-
-    #Keep the Default Problem Environment
-    $self->{problemEnviron} = ($self->{serverEnviron}{problemEnviron});
-    #Create Safe Compartment
-    $self->{safe} = new WWSafe;
-
-    bless $self;
-    return $self;
-}
+# sub new {
+#     my $self = shift;
+#     $self = {};
+#     #Base Conf
+#     $main::VERSION = "2.3.2";
+# 
+#     #Warnings are passed into self
+# 
+#     #Construct the Server Environment
+#     warn "Calling Opaqueserver::Environment to construct the environment in OpaqueServer::new";
+#     my $serverEnviron = new OpaqueServer::Environment($OpaqueServer::RootDir);
+#     #FIXME Hacks
+#     
+#     #$SIG{__WARN__} = sub { $self->{warnings} .= shift };
+# 
+#     #Keep the Default Server Environment
+#     $self->{serverEnviron} = $serverEnviron;
+# 
+#     #Keep the Default Problem Environment
+#     $self->{problemEnviron} = ($self->{serverEnviron}{problemEnviron});
+#     #Create Safe Compartment
+#     $self->{safe} = new WWSafe;
+# 
+#     bless $self;
+#     $self->setupImageGenerator();
+#     warn "creating new OpaqueServer $self";
+#     return $self;
+# }
 
 # sub setupTranslator {
 #     my $self = shift;
@@ -127,42 +130,42 @@ sub new {
 #     $self->{translator} = $translator;
 # }
 
-# sub setupImageGenerator {
-#     my $self = shift;
-#     warn "\n\n creating image generator \n\n";
-#     #Warnings are passed into self
-#     #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
-# 
-#     my $image_generator;
-#     my %imagesModeOptions = %{$self->{serverEnviron}->{pg}{displayModeOptions}{images}};
-#     $image_generator = WeBWorK::PG::ImageGenerator->new(
-# 	tempDir         => $self->{serverEnviron}->{opaqueServerDirs}->{tmp}, # global temp dir
-# 	latex	        => $self->{serverEnviron}->{externalPrograms}->{latex},
-# 	dvipng          => $self->{serverEnviron}->{externalPrograms}->{dvipng},
-# 	useCache        => 1,
-# 	cacheDir        => $self->{serverEnviron}->{opaqueServerDirs}{equationCache},
-# 	cacheURL        => $self->{serverEnviron}->{opaqueServerURLs}{equationCache},
-# 	cacheDB         => $self->{serverEnviron}->{opaqueServerFiles}{equationCacheDB},
-# 	useMarkers      => ($imagesModeOptions{dvipng_align} && $imagesModeOptions{dvipng_align} eq 'mysql'),
-# 	dvipng_align    => $imagesModeOptions{dvipng_align},
-# 	dvipng_depth_db => $imagesModeOptions{dvipng_depth_db},
-#     );
-#     #DEFINE CLOSURE CLASS FOR IMAGE GENERATOR
-#     $self->{problemEnviron}{imagegen} = new OpaqueServer::Utils::RestrictedClosureClass($image_generator, "add");
-# 
-#     $self->{imageGenerator} = $image_generator;
-# }
-# 
+sub setupImageGenerator {
+    my $self = shift;
+    print "\n\n creating image generator \n\n";
+    #Warnings are passed into self
+    #local $SIG{__WARN__} = sub { $self->{warnings} .= shift };
 
-sub downloadFiles {
-    my ($self,$files) = @_;
-    foreach(@{$files}) {
-        my $fileurl = decode_base64($_);
-        my $lastslash = rindex($fileurl,'/');
-        my $filepath = $self->{serverEnviron}->{opaqueServerDirs}->{htdocs_temp} . substr($fileurl,$lastslash);
-        mirror($fileurl,$filepath);
-    }
+    my $image_generator;
+    my %imagesModeOptions = %{$self->{serverEnviron}->{pg}{displayModeOptions}{images}};
+    $image_generator = WeBWorK::PG::ImageGenerator->new(
+		tempDir         => $self->{serverEnviron}->{opaqueServerDirs}->{tmp}, # global temp dir
+		latex	        => $self->{serverEnviron}->{externalPrograms}->{latex},
+		dvipng          => $self->{serverEnviron}->{externalPrograms}->{dvipng},
+		useCache        => 1,
+		cacheDir        => $self->{serverEnviron}->{opaqueServerDirs}{equationCache},
+		cacheURL        => $self->{serverEnviron}->{opaqueServerURLs}{equationCache},
+		cacheDB         => $self->{serverEnviron}->{opaqueServerFiles}{equationCacheDB},
+		useMarkers      => ($imagesModeOptions{dvipng_align} && $imagesModeOptions{dvipng_align} eq 'mysql'),
+		dvipng_align    => $imagesModeOptions{dvipng_align},
+		dvipng_depth_db => $imagesModeOptions{dvipng_depth_db},
+    );
+    #DEFINE CLOSURE CLASS FOR IMAGE GENERATOR
+    $self->{problemEnviron}{imagegen} = new OpaqueServer::Utils::RestrictedClosureClass($image_generator, "add");
+
+    $self->{imageGenerator} = $image_generator;
 }
+
+
+# sub downloadFiles {
+#     my ($self,$files) = @_;
+#     foreach(@{$files}) {
+#         my $fileurl = decode_base64($_);
+#         my $lastslash = rindex($fileurl,'/');
+#         my $filepath = $self->{serverEnviron}->{opaqueServerDirs}->{htdocs_temp} . substr($fileurl,$lastslash);
+#         mirror($fileurl,$filepath);
+#     }
+# }
 
 # returns a pg core object
 # sub runTranslator {
@@ -701,6 +704,7 @@ sub process {
 	my $return = OpaqueServer::ProcessReturn->new();
 	if (defined($params->{questionid} and $params->{questionid}=~/\.pg/i) ){
 		$return->{XHTML} = $self->get_html($questionSession, $params->{try}, $params);
+		warn "get_html finish params ", $params->{finish};
 		# need questionid parameter to find source filepath
 	} else {
 		$return->{XHTML}=$self->get_html_original($questionSession, $params->{try}, $params);
@@ -899,17 +903,48 @@ sub get_html {
         }
         $PGscore = (@PGscore_array) ? $PGscore/@PGscore_array : 0;
         warn "PG scores $PGscore ", join(" ", @PGscore_array), "\n\n";
+    my $answerOrder = $pg->{flags}->{ANSWER_ENTRY_ORDER};
+	my $answers = $pg->{answers};
+	my $ce = create_course_environment($submitteddata->{courseName});
+	warn "get_html finish submitteddata  ", $submitteddata->{finish}, " ", ($submitteddata->{finish} eq 'Finish')?1:0
+	;
+
+    my $tbl = WeBWorK::Utils::AttemptsTable->new(
+		$answers,
+		answersSubmitted       => ($try>1),
+		answerOrder            => $answerOrder,
+		displayMode            => $ce->{pg}->{options}->{displayMode}//'images',
+		imgGen                 => '',	
+		showAttemptPreviews    => 1,
+		showAttemptResults     => ($try>3), #($submitteddata->{finish} eq 'Finish')?1:0,
+		showCorrectAnswers     => ($try>3), #(defined($submitteddata->{finish}))?1:0 ,
+		showMessages           => 1,
+		ce                     => $ce,
+	);
+	warn "attemptsTable is ", $tbl;
+	warn "tbl imgGen is ", $tbl->imgGen;
+	my $attemptResults = $tbl->answerTemplate();
+	# render equation images
+	$tbl->imgGen->render(refresh => 1) if $tbl->displayMode eq 'images';
 
     my $output = '
 		<div class="local_testopaqueqe">
 		<h2>WeBWorK-Moodle Question type</h2><p> (Using Opaque question type)</p>
 		<p>This is the WeBWorK test Opaque engine  '  ." at $OpaqueServer::Host <br/>  sessionID ".
-		$sessionid . ' with question attempt ' . $try . '</p>';
+		$sessionid . ' with question attempt ' . $try . 
+	    '</p><p> Currently correct answers will be shown after the third attempt. 
+	    It would be preferrable if 
+	    this table was shown after a student presses the finish button, 
+	    but the finish process 
+	    does not currently refresh the main html section so the 
+	    table is not updated with the last
+	    submission via finish. </p>';
 
 	foreach my $name (keys %$hiddendata)  {
 		$output .= '<input type="hidden" name="%%IDPREFIX%%' . $name .
 				'" value="' . htmlspecialchars($hiddendata->{$name}//'') . '" />' . "\n";
 	}
+	$output .= $attemptResults;
 	$output .= "\n<hr>\n". $pg->{body_text}."\n<hr>\n";
 	$output .= '
         <h4>Actions</h4>
@@ -958,6 +993,7 @@ sub get_html {
 		</table>';
 
 	$output .= pretty_print($pg->{answers},'html',4); #  $pg->{body_text};
+	$output .= pretty_print($tbl,'html',4);
 	$output .= '</div>';
 	return $output;
     
@@ -1025,7 +1061,7 @@ sub renderOpaquePGProblem {
     my $problemFile = shift//'';
     my $formFields  = shift//'';
     my %args = ();
-     my $courseName = $formFields->{courseName}//'gage_course';
+    my $courseName = $formFields->{courseName}//'gage_course';
     warn "rendering $problemFile in course $courseName \n";
  	$ce = create_course_environment($courseName);
  	$dbLayout = $ce->{dbLayout};	
@@ -1119,7 +1155,7 @@ sub create_course_environment {
 # 
 sub get_css {
 	my $self = shift;
-    return '
+    return <<END_CSS;
 		.que.opaque .formulation .local_testopaqueqe {
 			border-radius: 5px 5px 5px 5px;
 			background: #E4F1FA;
@@ -1147,7 +1183,41 @@ sub get_css {
 		}
 		.local_testopaqueqe table td {
 			padding: 0 0.5em 0 0;
-		}';
+		}
+		/* styles for the attemptResults table */
+		table.attemptResults {
+			border-style: outset; 
+			border-width: 1px; 
+			margin-bottom: 1em; 
+			border-spacing: 1px;
+		/*      removed float stuff because none of the other elements nearby are
+				floated and it was causing trouble
+			float:left;
+			clear:right; */
+		}
+
+		table.attemptResults td,
+		table.attemptResults th {
+			border-style: inset; 
+			border-width: 1px; 
+			text-align: center; 
+			vertical-align: middle;
+			/*width: 15ex;*/ /* this was erroniously commented out with "#" */
+			padding: 2px 5px 2px 5px;
+			color: inherit;
+			background-color: #DDDDDD;
+		}
+
+		.attemptResults .popover {
+			max-width: 100%;
+		}
+
+		table.attemptResults td.FeedbackMessage { background-color:#EDE275;} /* Harvest Gold */
+		table.attemptResults td.ResultsWithoutError { background-color:#8F8;}
+		span.ResultsWithErrorInResultsTable { color: inherit; background-color: inherit; } /* used to override the older red on white span */ 
+		table.attemptResults td.ResultsWithError { background-color:#D69191; color: #000000} /* red */
+
+END_CSS
 }
 sub htmlspecialchars {
 	return shift;
