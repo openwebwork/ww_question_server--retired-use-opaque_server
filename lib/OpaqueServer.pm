@@ -17,17 +17,17 @@ use WWSafe;
 
 use LWP::Simple;
 
-use OpaqueServer::Environment;
-use OpaqueServer::Utils::RestrictedClosureClass;
+#use OpaqueServer::Environment;
+#use OpaqueServer::Utils::RestrictedClosureClass;
 
-use OpaqueServer::AnswerRequest;
-use OpaqueServer::AnswerResponse;
+#use OpaqueServer::AnswerRequest;
+#use OpaqueServer::AnswerResponse;
 
-use OpaqueServer::ProblemRequest;
-use OpaqueServer::ProblemResponse;
+#use OpaqueServer::ProblemRequest;
+#use OpaqueServer::ProblemResponse;
 
-use OpaqueServer::GeneratorRequest;
-use OpaqueServer::GeneratorResponse;
+#use OpaqueServer::GeneratorRequest;
+#use OpaqueServer::GeneratorResponse;
 
 use OpaqueServer::StartReturn;
 use OpaqueServer::ProcessReturn;
@@ -45,38 +45,17 @@ use Memory::Usage;
 
 use PGUtil qw(pretty_print not_null);
 use WeBWorK::Utils::Tasks qw(fake_set fake_problem fake_user);   # may not be needed
+
 use constant fakeSetName => "Undefined_Set";
 use constant fakeUserName => "Undefined_User";
 
 
-
-
-# use constant DISPLAY_MODES => {
-# 	# display name   # mode name
-# 	tex           => "TeX",
-# 	plainText     => "HTML",
-# 	formattedText => "HTML_tth",
-# 	images        => "HTML_dpng",
-# 	jsMath	      => "HTML_jsMath",
-# 	asciimath     => "HTML_asciimath",
-# 	LaTeXMathML   => "HTML_LaTeXMathML",
-# };
 
 use constant MAX_MARK => 1;
 
 our $DEBUG=0;
 our $memory_usage = Memory::Usage->new();
 
-
-
-# sub translateDisplayModeNames($) {
-# 	my $name = shift//'images';
-# 	warn "\n\n display mode set to ", DISPLAY_MODES()->{$name}, "\n\n";
-# 	return DISPLAY_MODES()->{$name};
-# }
-# sub nullSafetyFilter {
-# 	return shift, 0; # no errors
-# }
 
 
 ####################################################################################
@@ -279,7 +258,7 @@ sub process {
 	# initialize the attempt number
 	$params->{try} = $params->{try}//-666;
 	# bump the attempt number if this is a submission
-	$params->{try}++ if defined $params->{submit};
+	$params->{try}++ if defined( $params->{WWsubmit} ) or defined( $params->{WWsubmit} );
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
 	if (defined($params->{questionid} and $params->{questionid}=~/\.pg/i) ){
@@ -298,7 +277,7 @@ sub process {
         )
     );
      if (defined($params->{finish}) ) {
-            $return->{questionEnd} = 'true';
+            #$return->{questionEnd} = 'true';
             $return->{results} = OpaqueServer::Results->new();
             $return->{results}->{questionLine} = 'Test Opaque question.';
             $return->{results}->{answerLine} = 'Finished on demand.';
@@ -318,7 +297,7 @@ sub process {
                 $score = OpaqueServer::Score->new(0);
                 push @{$return->{results}->{scores}}, $score;
             } else {
-                $return->{results}->{attempts} = -2;
+                $return->{results}->{attempts} = $params->{try};
                 $score = OpaqueServer::Score->new($mark);
                 push @{$return->{results}->{scores}}, $score;
             }
@@ -332,7 +311,7 @@ sub process {
             $return->{results}->{actionSummary} = 'Finished by Submit all and finish. Treating as a pass.';
             $return->{results}->{attempts} = 0;
         }
-
+	
 	$return;
 }
 
@@ -460,18 +439,24 @@ sub get_html {
 	my $self = shift;
 	my ($sessionid, $try, $submitteddata) = @_;
 	my $disabled = '';
-	if (substr($sessionid, 0, 3) eq 'ro-') {
-		$disabled = 'disabled="disabled" ';
-	}
-	my $submitDisabled   = (defined( $submitteddata->{WWfinish} ) )?'disabled="disabled"':'';
-	my $WWsubmitDisabled = (!defined( $submitteddata->{submit}) or defined( $submitteddata->{WWfinish} ) )?'disabled="disabled"':'';
-    my $finishDisabled = (!defined( $submitteddata->{submit} ) or $disabled ne '' )?'disabled="disabled"':'';
+	#if (substr($sessionid, 0, 3) eq 'ro-') {
+	#	$disabled = 'disabled="disabled" ';
+	#}
+	my $localstate = $submitteddata->{localstate}//'preview';
+	$localstate = 'attempt' if $localstate ne 'graded' and $submitteddata->{WWsubmit};
+	$localstate = 'graded'  if $submitteddata->{WWgrade};
+	my $previewDisabled   = ''; # (0)?'disabled="disabled" ':'';
+	my $WWsubmitDisabled = ''; #($localstate eq 'graded')?'disabled="disabled" ':'';
+    my $WWgradeDisabled = ''; #($localstate eq 'graded')?'disabled="disabled" ': '';
 	my $hiddendata = {
 		'try' => $try,
-		'questionid' => $submitteddata->{questionid}, 
+		'questionid' => $submitteddata->{questionid},
+		'localstate' => $localstate, 
 		%$submitteddata,
 	};
-	$hiddendata->{submit}='Submit' if $submitteddata->{WWfinish} ;
+	$submitteddata->{finish}='Finish' if $submitteddata->{WWgrade};
+	$submitteddata->{submit}='Submit' if $submitteddata->{preview} or 
+	$submitteddata->{WWsubmit} or $submitteddata->{WWgrade};
 	 my $filePath = $submitteddata->{questionid};
 	    $filePath =~ s/\_\_\_/\-/g;  # hand fact that - is replaced by ___ 3 underscores
         $filePath =~ s/\_\_/\//g; # handle fact that / must be replaced by __ 2 underscores
@@ -492,13 +477,13 @@ sub get_html {
 
     my $tbl = WeBWorK::Utils::AttemptsTable->new(
 		$answers,
-		answersSubmitted       => ($try>1),
+		answersSubmitted       => $submitteddata->{submit},  # a submit button was pressed
 		answerOrder            => $answerOrder,
 		displayMode            => $ce->{pg}->{options}->{displayMode}//'images',
 		imgGen                 => '',	
 		showAttemptPreviews    => 1,
-		showAttemptResults     => ($WWsubmitDisabled eq '')?0:1,
-		showCorrectAnswers     => ($WWsubmitDisabled eq '')?0:1 ,
+		showAttemptResults     => ($localstate eq 'attempt' or $localstate eq 'graded'),
+		showCorrectAnswers     => ($localstate eq 'graded') ,
 		showMessages           => 1,
 		ce                     => $ce,
 	);
@@ -523,9 +508,10 @@ sub get_html {
 	$output .= "\n<hr>\n". $pg->{body_text}."\n<hr>\n";
 	$output .= '
         <h4>Actions</h4>
-		<p><input type="submit" name="%%IDPREFIX%%submit"  value="Preview" ' . $submitDisabled . '/> or
-		<input type="submit" name="%%IDPREFIX%%WWfinish" value="Submit" ' . $WWsubmitDisabled . '/> or
-		<input type="submit" name="%%IDPREFIX%%finish" value="Finish" ' . $finishDisabled . '/>
+        localstate = ' . $localstate. ' <br/>
+		<p><input type="submit" name="%%IDPREFIX%%preview"  value="Preview" ' . $previewDisabled . '/> or
+		<input type="submit" name="%%IDPREFIX%%WWsubmit" value="WWSubmit" ' . $WWsubmitDisabled . '/> or
+		<input type="submit" name="%%IDPREFIX%%WWgrade" value="WWGrade" ' . $WWgradeDisabled . '/>
 		</p>
 		</div>';
 
