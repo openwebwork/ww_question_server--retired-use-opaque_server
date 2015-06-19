@@ -258,7 +258,7 @@ sub process {
 	# initialize the attempt number
 	$params->{try} = $params->{try}//-666;
 	# bump the attempt number if this is a submission
-	$params->{try}++ if defined( $params->{WWsubmit} ) or defined( $params->{WWsubmit} );
+	$params->{try}++ if defined( $params->{WWsubmit} ); # or defined( $params->{WWgrade} );
 	# prepare return object 
 	my $return = OpaqueServer::ProcessReturn->new();
 	if (defined($params->{questionid} and $params->{questionid}=~/\.pg/i) ){
@@ -445,9 +445,10 @@ sub get_html {
 	my $localstate = $submitteddata->{localstate}//'preview';
 	$localstate = 'attempt' if $localstate ne 'graded' and $submitteddata->{WWsubmit};
 	$localstate = 'graded'  if $submitteddata->{WWgrade};
-	my $previewDisabled   = ''; # (0)?'disabled="disabled" ':'';
-	my $WWsubmitDisabled = ''; #($localstate eq 'graded')?'disabled="disabled" ':'';
-    my $WWgradeDisabled = ''; #($localstate eq 'graded')?'disabled="disabled" ': '';
+
+	my $previewDisabled   = ($localstate eq 'graded')?'disabled="disabled" ':'';
+	my $WWsubmitDisabled = ($localstate eq 'graded')?'disabled="disabled" ':'';
+    my $WWgradeDisabled =  ($localstate eq 'graded')?'disabled="disabled" ': '';
 	my $hiddendata = {
 		'try' => $try,
 		'questionid' => $submitteddata->{questionid},
@@ -508,10 +509,9 @@ sub get_html {
 	$output .= "\n<hr>\n". $pg->{body_text}."\n<hr>\n";
 	$output .= '
         <h4>Actions</h4>
-        localstate = ' . $localstate. ' <br/>
-		<p><input type="submit" name="%%IDPREFIX%%preview"  value="Preview" ' . $previewDisabled . '/> or
-		<input type="submit" name="%%IDPREFIX%%WWsubmit" value="WWSubmit" ' . $WWsubmitDisabled . '/> or
-		<input type="submit" name="%%IDPREFIX%%WWgrade" value="WWGrade" ' . $WWgradeDisabled . '/>
+		<p><input type="submit" name="%%IDPREFIX%%preview"  value="Preview" ' . $previewDisabled . '/> 
+		<input type="submit" name="%%IDPREFIX%%WWsubmit" value="Submit Attempt" ' . $WWsubmitDisabled . '/> 
+		<input type="submit" name="%%IDPREFIX%%WWgrade" value="Grade and Finish" ' . $WWgradeDisabled . '/>
 		</p>
 		</div>';
 
